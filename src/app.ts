@@ -12,5 +12,10 @@ app.use(morgan("combined"));
 // Route handler for items
 app.use("/api/v1", itemRoutes);
 
+// Health check endpoint
+app.get("/health", (req, res) => {
+    res.status(200).send("Server is healthy");
+});
+
 // Export the app
 export default app;
