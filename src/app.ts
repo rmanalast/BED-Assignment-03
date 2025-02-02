@@ -3,6 +3,8 @@ import morgan from "morgan"; // Import Morgan
 
 // Import the item routes from the new routes file
 import itemRoutes from "./api/v1/routes/itemRoutes";
+import employeeRoutes from "./api/v1/routes/employeeRoutes"; // Import Employee Routes
+
 import setupSwagger from "../config/swagger"; // Import Swagger setup
 
 const app: Express = express();
@@ -15,6 +17,9 @@ app.use(morgan("combined"));
 
 // Route handler for items
 app.use("/api/v1", itemRoutes);
+
+// Route hanler for employees
+app.use("/api/v1", employeeRoutes); // Add Employee Routes
 
 // Health check endpoint
 app.get("/health", (req, res) => {
