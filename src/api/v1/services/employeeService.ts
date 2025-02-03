@@ -1,7 +1,8 @@
 import { Employee } from "../interfaces/employee";
+import { sampleEmployees } from "../sample data/employeeData";
 
 // Simulated in-memory database
-let employees: Employee[] = [];
+let employees: Employee[] = [...sampleEmployees];  // <-- Use the sample employees
 
 /**
  * Get all employees from the in-memory storage.
