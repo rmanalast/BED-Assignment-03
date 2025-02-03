@@ -52,6 +52,8 @@ describe("Employee Directory API", () => {
 });
 
 describe("Branch Routes - Logical Operations", () => {
+    
+    //
     it("should retrieve all employees for a given branch", async () => {
         const branchId = "1";
         const res = await request(app).get(`/api/v1/branches/${branchId}/employees`);
@@ -61,6 +63,7 @@ describe("Branch Routes - Logical Operations", () => {
         expect(Array.isArray(res.body.data)).toBe(true);
     });
 
+    // 
     it("should retrieve all employees for a given department", async () => {
         const departmentId = "1";
         const res = await request(app).get(`/api/v1/branches/department/${departmentId}/employees`);
