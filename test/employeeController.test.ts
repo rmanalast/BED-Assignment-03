@@ -1,6 +1,4 @@
-// src/tests/employeeController.test.ts
-
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import * as employeeController from "../src/api/v1/controllers/employeeController";
 import * as employeeService from "../src/api/v1/services/employeeService";
 
@@ -10,7 +8,6 @@ jest.mock("../src/api/v1/services/employeeService");
 describe("Employee Controller", () => {
     let mockReq: Partial<Request>;
     let mockRes: Partial<Response>;
-    let mockNext: NextFunction;
 
     // Sample employee object to use in tests
     const sampleEmployee = {
@@ -26,7 +23,6 @@ describe("Employee Controller", () => {
         jest.clearAllMocks();
         mockReq = { params: {}, body: {} };
         mockRes = { status: jest.fn().mockReturnThis(), json: jest.fn() };
-        mockNext = jest.fn();
     });
 
     // Test Create
