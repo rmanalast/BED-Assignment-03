@@ -50,3 +50,23 @@ describe("Employee Directory API", () => {
         expect(employeeController.deleteEmployee).toHaveBeenCalled();
     });
 });
+
+describe("Branch Routes - Logical Operations", () => {
+    it("should retrieve all employees for a given branch", async () => {
+        const branchId = "1";
+        const res = await request(app).get(`/api/v1/branches/${branchId}/employees`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty("message", "Employees retrieved");
+        expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it("should retrieve all employees for a given department", async () => {
+        const departmentId = "1";
+        const res = await request(app).get(`/api/v1/branches/department/${departmentId}/employees`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty("message", "Employees retrieved");
+        expect(Array.isArray(res.body.data)).toBe(true);
+    });
+});

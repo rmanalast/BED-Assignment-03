@@ -1,7 +1,42 @@
 import { Branch } from "../interfaces/branch";
+import { Employee } from "../interfaces/employee";
 
 // In-memory branch storage
 let branches: Branch[] = [];
+
+// Mock data for employees
+const employees: Employee[] = [
+    {
+        id: "1", 
+        name: "Alice Johnson", 
+        position: "Branch Manager", 
+        branchId: "1", 
+        departmentId: "1",
+        department: "Management",
+        email: "alice.johnson@pixell-river.com",
+        phone: "604-555-0148"
+    },
+    {
+        id: "2", 
+        name: "Amandeep Singh", 
+        position: "Customer Service Representative", 
+        branchId: "2", 
+        departmentId: "2",
+        department: "Customer Service",
+        email: "amandeep.singh@pixell-river.com",
+        phone: "780-555-0172"
+    },
+    {
+        id: "3", 
+        name: "Maria Garcia", 
+        position: "Loan Officer", 
+        branchId: "3", 
+        departmentId: "3",
+        department: "Loans",
+        email: "maria.garcia@pixell-river.com",
+        phone: "204-555-0193"
+    },
+];
 
 // Create Branch
 export const createBranch = (newBranch: Branch): Branch => {
@@ -38,4 +73,14 @@ export const deleteBranch = (id: string): boolean => {
         return true;
     }
     return false;
+};
+
+// Get Employees by Branch ID
+export const getEmployeesByBranch = (branchId: string): Employee[] => {
+    return employees.filter(employee => employee.branchId === branchId);
+};
+
+// Get Employees by Department
+export const getEmployeesByDepartment = (departmentId: string): Employee[] => {
+    return employees.filter(employee => employee.departmentId === departmentId);
 };

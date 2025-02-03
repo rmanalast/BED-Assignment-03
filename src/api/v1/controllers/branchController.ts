@@ -48,3 +48,27 @@ export const deleteBranch = async (req: Request, res: Response): Promise<void> =
         res.status(404).json({ message: "Branch not found" });
     }
 };
+
+// Get Employees by Branch ID
+export const getEmployeesByBranch = async (req: Request, res: Response): Promise<void> => {
+    const branchId = req.params.branchId;
+    const employees = await branchService.getEmployeesByBranch(branchId);
+
+    if (employees.length > 0) {
+        res.status(200).json({ message: "Employees retrieved", data: employees });
+    } else {
+        res.status(404).json({ message: "No employees found for this branch" });
+    }
+};
+
+// Get Employees by Department
+export const getEmployeesByDepartment = async (req: Request, res: Response): Promise<void> => {
+    const departmentId = req.params.departmentId;
+    const employees = await branchService.getEmployeesByDepartment(departmentId);
+
+    if (employees.length > 0) {
+        res.status(200).json({ message: "Employees retrieved", data: employees });
+    } else {
+        res.status(404).json({ message: "No employees found in this department" });
+    }
+};
