@@ -23,7 +23,7 @@ app.use("/api/v1", itemRoutes);
 app.use("/api/v1", employeeRoutes);
 
 // Route handler for Branch
-app.use('/api/v1', branchRoutes);
+app.use("/api/v1", branchRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

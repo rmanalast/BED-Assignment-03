@@ -44,6 +44,7 @@ export const getAllEmployees = async (req: Request, res: Response): Promise<void
     try {
         const employees = await employeeService.getAllEmployees();
         res.status(200).json({ message: "Employees retrieved", data: employees });
+        
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch employees" });
     }
