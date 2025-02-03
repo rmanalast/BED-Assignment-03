@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as branchService from "../services/branchService";
-import { Branch } from "../interfaces/branch.interface";
+import { Branch } from "../interfaces/branch";
 
 // Create Branch
 export const createBranch = async (req: Request, res: Response): Promise<void> => {
