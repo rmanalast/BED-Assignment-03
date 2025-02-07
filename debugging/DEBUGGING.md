@@ -33,41 +33,40 @@
 
 ---
 
-## Scenario 2: **Debugging Update Branch Process**
+## Scenario 2: **Debugging Employee Deletion Process**
 
-- **Breakpoint Location:** `branchController.ts`, line 87 (`updateBranch` function)
-- **Objective:** Debug the branch update flow to see how the `PUT` request is handled, and observe the result when attempting to update a non-existing branch.
+- **Breakpoint Location:** `employeeController.ts`, line 110 (`deleteEmployee` function)
+- **Objective:** Debug the employee deletion flow to see how the `DELETE` request is handled, and observe the result when attempting to delete a non-existing employee.
 
 ### Debugger Observations
 
 - **Variable States:**
-  - `updated`: Boolean indicating whether the branch was successfully updated.
+  - `deleted`: Boolean indicating whether the employee was successfully deleted.
   
 - **Call Stack:**
-  - The controller calls `updateBranch` in `branchService.ts` with the branch ID and new data to update the branch.
+  - The controller calls `deleteEmployee` in `employeeService.ts` with the employee ID to remove the employee.
   
 - **Behavior:**
-  - The debugger shows that if the branch ID is valid, the `updated` variable is set to `true`.
-  - If the branch does not exist, `updated` is `false`, and a `404` response is returned.
+  - The debugger shows that if the employee ID is valid, the `deleted` variable is set to `true`.
+  - If the employee does not exist, `deleted` is `false`, and a `404` response is returned.
   
 ### Analysis:
 - **What did you learn from this scenario?**
-  - I confirmed that the update process works as expected, and the API correctly handles cases where the branch does not exist.
+  - I confirmed that the deletion process works as expected, and the API correctly handles cases where the employee does not exist.
 
 - **Did you observe any unexpected behavior?**
-  - No, the behavior was expected. However, it's important to handle cases where no branch is found in a user-friendly manner.
+  - No, the behavior was expected. However, it's important to handle cases where no employee is found in a user-friendly manner.
 
 - **Areas for improvement or refactoring?**
   - Adding more error handling around potential database issues could improve the robustness of the system.
 
 - **How does this enhance your understanding of the overall project?**
-  - This scenario helped me understand how to manage updates in RESTful APIs and handle cases where the item to be updated does not exist.
-
+  - This scenario helped me understand how to manage deletion in RESTful APIs and handle cases where the item to be deleted does not exist.
 ---
 
 ## Scenario 3: **Debugging Get All Branches Test**
 
-- **Breakpoint Location:** `branchController.test.ts`, line 50 - 60 (test for `getAllBranches` function)
+- **Breakpoint Location:** `branchController.test.ts`, line 58 (test for `getAllBranches` function)
 - **Objective:** Investigate how the unit test for the `getAllBranches` function works and observe the behavior when retrieving all branches.
 
 ### Debugger Observations
