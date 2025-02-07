@@ -1,13 +1,23 @@
+/**
+ * Router for handling branch-related routes.
+ * This defines endpoints for creating, retrieving, updating, and deleting branches,
+ * as well as retrieving employees associated with a specific branch.
+ */
 import express, { Router } from "express";
 import * as branchController from "../controllers/branchController";
 
-const router: Router = express.Router();
+const branchRouter: Router = express.Router();
 
 /**
+ * Route to create a new branch.
+ * @route POST /branches
  * @swagger
- * /api/v1/branches:
+ * /branches:
  *   post:
- *     description: Create a new branch
+ *     summary: Create a new branch
+ *     description: Adds a new branch to the system.
+ *     tags:
+ *       - Branches
  *     requestBody:
  *       required: true
  *       content:
@@ -17,54 +27,71 @@ const router: Router = express.Router();
  *     responses:
  *       201:
  *         description: Branch created successfully
- *       500:
- *         description: Failed to create branch
+ *       400:
+ *         description: Invalid input data
  */
-router.post("/branches", branchController.createBranch);
+branchRouter.post("/", branchController.createBranch);
 
 /**
+ * Route to get all branches.
+ * @route GET /branches
  * @swagger
- * /api/v1/branches:
+ * /branches:
  *   get:
- *     description: Get all branches
+ *     summary: Retrieve all branches
+ *     description: Fetches a list of all branches.
+ *     tags:
+ *       - Branches
  *     responses:
  *       200:
- *         description: List of all branches
+ *         description: Successfully retrieved branches
  *       500:
- *         description: Failed to fetch branches
+ *         description: Server error
  */
-router.get("/branches", branchController.getAllBranches);
+branchRouter.get("/", branchController.getAllBranches);
 
 /**
+ * Route to get a branch by ID.
+ * @route GET /branches/:id
  * @swagger
- * /api/v1/branches/{id}:
+ * /branches/{id}:
  *   get:
- *     description: Get a branch by ID
+ *     summary: Retrieve a specific branch
+ *     description: Fetches details of a branch using its ID.
+ *     tags:
+ *       - Branches
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The ID of the branch to retrieve
+ *         schema:
+ *           type: string
+ *         description: The branch ID
  *     responses:
  *       200:
- *         description: Branch found
+ *         description: Branch retrieved successfully
  *       404:
  *         description: Branch not found
- *       500:
- *         description: Failed to fetch branch
  */
-router.get("/branches/:id", branchController.getBranchById);
+branchRouter.get("/:id", branchController.getBranchById);
 
 /**
+ * Route to update a branch.
+ * @route PUT /branches/:id
  * @swagger
- * /api/v1/branches/{id}:
+ * /branches/{id}:
  *   put:
- *     description: Update a branch by ID
+ *     summary: Update a branch
+ *     description: Modifies the details of an existing branch.
+ *     tags:
+ *       - Branches
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The ID of the branch to update
+ *         schema:
+ *           type: string
+ *         description: The branch ID
  *     requestBody:
  *       required: true
  *       content:
@@ -74,71 +101,90 @@ router.get("/branches/:id", branchController.getBranchById);
  *     responses:
  *       200:
  *         description: Branch updated successfully
+ *       400:
+ *         description: Invalid input data
  *       404:
  *         description: Branch not found
- *       500:
- *         description: Failed to update branch
  */
-router.put("/branches/:id", branchController.updateBranch);
+branchRouter.put("/:id", branchController.updateBranch);
 
 /**
+ * Route to delete a branch.
+ * @route DELETE /branches/:id
  * @swagger
- * /api/v1/branches/{id}:
+ * /branches/{id}:
  *   delete:
- *     description: Delete a branch by ID
+ *     summary: Delete a branch
+ *     description: Removes a branch from the system.
+ *     tags:
+ *       - Branches
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The ID of the branch to delete
+ *         schema:
+ *           type: string
+ *         description: The branch ID
  *     responses:
  *       200:
  *         description: Branch deleted successfully
  *       404:
  *         description: Branch not found
- *       500:
- *         description: Failed to delete branch
  */
-router.delete("/branches/:id", branchController.deleteBranch);
+branchRouter.delete("/:id", branchController.deleteBranch);
 
 /**
+ * Route to get all employees in a specific branch.
+ * @route GET /branches/:branchId/employees
  * @swagger
- * /api/v1/branches/{branchId}/employees:
+ * /branches/{branchId}/employees:
  *   get:
- *     description: Get all employees of a specific branch
+ *     summary: Retrieve employees by branch
+ *     description: Fetches a list of employees assigned to a specific branch.
+ *     tags:
+ *       - Branches
  *     parameters:
  *       - in: path
  *         name: branchId
  *         required: true
- *         description: The ID of the branch to retrieve employees for
+ *         schema:
+ *           type: string
+ *         description: The branch ID
  *     responses:
  *       200:
- *         description: List of employees in the branch
+ *         description: Employees retrieved successfully
  *       404:
- *         description: No employees found for this branch
- *       500:
- *         description: Failed to fetch employees for this branch
+ *         description: Branch not found or no employees assigned
  */
-router.get("/branches/:branchId/employees", branchController.getEmployeesByBranch);
+branchRouter.get("/:branchId/employees", branchController.getEmployeesByBranch);
+
+export default branchRouter;
 
 /**
  * @swagger
- * /api/v1/branches/department/{departmentId}/employees:
- *   get:
- *     description: Get all employees in a specific department across all branches
- *     parameters:
- *       - in: path
- *         name: departmentId
- *         required: true
- *         description: The ID of the department to retrieve employees for
- *     responses:
- *       200:
- *         description: List of employees in the department
- *       404:
- *         description: No employees found for this department
- *       500:
- *         description: Failed to fetch employees for this department
+ * components:
+ *   schemas:
+ *     Branch:
+ *       type: object
+ *       required:
+ *         - name
+ *         - location
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: The branch's unique identifier
+ *         name:
+ *           type: string
+ *           description: The name of the branch
+ *         location:
+ *           type: string
+ *           description: The location of the branch
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: The timestamp when the branch was created
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: The timestamp when the branch was last updated
  */
-router.get("/branches/department/:departmentId/employees", branchController.getEmployeesByDepartment);
-
-export default router;

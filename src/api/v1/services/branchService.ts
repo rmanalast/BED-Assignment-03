@@ -1,114 +1,88 @@
+/**
+ * Service functions for managing branches and their related operations.
+ * Includes functions for creating, retrieving, updating, and deleting branches,
+ * as well as retrieving employees associated with a specific branch.
+ */
 import { Branch } from "../interfaces/branch";
+import { sampleBranches } from "../sample data/branchData";
 import { Employee } from "../interfaces/employee";
+import { sampleEmployees } from "../sample data/employeeData";
 
-// In-memory branch storage
-let branches: Branch[] = [];
-
-// Mock data for employees
-const employees: Employee[] = [
-    {
-        id: "1", 
-        name: "Alice Johnson", 
-        position: "Branch Manager", 
-        branchId: "1", 
-        departmentId: "1",
-        department: "Management",
-        email: "alice.johnson@pixell-river.com",
-        phone: "604-555-0148"
-    },
-    {
-        id: "2", 
-        name: "Amandeep Singh", 
-        position: "Customer Service Representative", 
-        branchId: "2", 
-        departmentId: "2",
-        department: "Customer Service",
-        email: "amandeep.singh@pixell-river.com",
-        phone: "780-555-0172"
-    },
-    {
-        id: "3", 
-        name: "Maria Garcia", 
-        position: "Loan Officer", 
-        branchId: "3", 
-        departmentId: "3",
-        department: "Loans",
-        email: "maria.garcia@pixell-river.com",
-        phone: "204-555-0193"
-    },
-];
+const branches: Branch[] = [];
+const employees: Employee[] = [];
 
 /**
- * Create a new branch and add it to the in-memory branch storage.
- * @param newBranch The branch object to be created.
- * @returns The created branch with an assigned ID.
+ * Creates a new branch and adds it to the branches list.
+ * @param {Object} branch - The branch details (name, address, phone).
+ * @returns {Promise<Branch>} The newly created branch.
  */
-export const createBranch = (newBranch: Branch): Branch => {
-    newBranch.id = (branches.length + 1).toString(); // Simple ID generation
+export const createBranch = async (branch: {
+    name: string;
+    address: string;
+    phone: string;
+}): Promise<Branch> => {
+    const newBranch: Branch = { id: Date.now().toString(), ...branch };
     branches.push(newBranch);
     return newBranch;
 };
 
 /**
- * Get all branches from the in-memory storage.
- * @returns A list of all branches.
+ * Retrieves all branches.
+ * @returns {Promise<Branch[]>} An array of all branches.
  */
-export const getAllBranches = (): Branch[] => {
+export const getAllBranches = async (): Promise<Branch[]> => {
     return branches;
 };
 
 /**
- * Get a branch by its ID.
- * @param id The ID of the branch to be retrieved.
- * @returns The branch with the specified ID, or undefined if not found.
+ * Retrieves a branch by its ID.
+ * @param {string} id - The ID of the branch.
+ * @param {any} body - Additional request data (if applicable).
+ * @returns {Branch[]} An array containing the found branch or an empty array if not found.
  */
-export const getBranchById = (id: string): Branch | undefined => {
-    return branches.find(branch => branch.id === id);
+export const getBranchById = (id: string, body: any): Branch[] => {
+    const foundBranch = branches.find(branch => branch.id === id);
+    return foundBranch ? [foundBranch] : [];
 };
 
 /**
- * Update the details of a specific branch by its ID.
- * @param id The ID of the branch to be updated.
- * @param updatedBranch The updated branch object.
- * @returns The updated branch, or null if no branch with the specified ID exists.
+ * Updates a branch by its ID.
+ * @param {string} id - The ID of the branch.
+ * @param {Object} updatedBranch - The updated branch details (name, address, phone).
+ * @returns {Promise<Branch>} The updated branch.
+ * @throws {Error} If the branch with the given ID is not found.
  */
-export const updateBranch = (id: string, updatedBranch: Branch): Branch | null => {
-    const index = branches.findIndex(branch => branch.id === id);
-    if (index !== -1) {
-        branches[index] = { ...branches[index], ...updatedBranch };
-        return branches[index];
+export const updateBranch = async (
+    id: string,
+    updatedBranch: { name: string; address: string; phone: string }
+): Promise<Branch> => {
+    const index: number = branches.findIndex(branch => branch.id === id);
+    if (index === -1) {
+        throw new Error(`Branch with ID ${id} not found`);
     }
-    return null;
+    branches[index] = { id, ...updatedBranch };
+    return branches[index];
 };
 
 /**
- * Delete a branch by its ID from the in-memory storage.
- * @param id The ID of the branch to be deleted.
- * @returns A boolean indicating whether the branch was successfully deleted.
+ * Deletes a branch by its ID.
+ * @param {string} id - The ID of the branch.
+ * @returns {Promise<void>} Resolves when the branch is deleted.
+ * @throws {Error} If the branch with the given ID is not found.
  */
-export const deleteBranch = (id: string): boolean => {
-    const index = branches.findIndex(branch => branch.id === id);
-    if (index !== -1) {
-        branches.splice(index, 1);
-        return true;
+export const deleteBranch = async (id: string): Promise<void> => {
+    const index: number = branches.findIndex(branch => branch.id === id);
+    if (index === -1) {
+        throw new Error(`Branch with ID ${id} not found`);
     }
-    return false;
+    branches.splice(index, 1);
 };
 
 /**
- * Get a list of employees working at a specific branch.
- * @param branchId The ID of the branch whose employees are to be retrieved.
- * @returns A list of employees associated with the specified branch.
+ * Retrieves all employees associated with a given branch.
+ * @param {string} branchId - The ID of the branch.
+ * @returns {Promise<Employee[]>} An array of employees belonging to the specified branch.
  */
-export const getEmployeesByBranch = (branchId: string): Employee[] => {
+export const getEmployeesByBranch = async (branchId: string): Promise<Employee[]> => {
     return employees.filter(employee => employee.branchId === branchId);
-};
-
-/**
- * Get a list of employees working in a specific department.
- * @param departmentId The ID of the department whose employees are to be retrieved.
- * @returns A list of employees associated with the specified department.
- */
-export const getEmployeesByDepartment = (departmentId: string): Employee[] => {
-    return employees.filter(employee => employee.departmentId === departmentId);
 };

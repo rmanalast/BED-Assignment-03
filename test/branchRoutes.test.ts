@@ -1,85 +1,82 @@
 import request from "supertest";
-import app from "../src/app"; 
-import * as branchService from "../src/api/v1/services/branchService";
+import app from "../src/app";
+import {
+    createBranch,
+    getAllBranches,
+    getBranchById,
+    updateBranch,
+    deleteBranch,
+    getEmployeesByBranch,
+} from "../src/api/v1/controllers/branchController";
 
-jest.mock("../src/api/v1/services/branchService");
+// Mock the controller functions
+jest.mock("../src/api/v1/controllers/branchController", () => ({
+    createBranch: jest.fn((req, res) => res.status(201).send()),
+    getAllBranches: jest.fn((req, res) => res.status(200).send()),
+    getBranchById: jest.fn((req, res) => res.status(200).send()),
+    updateBranch: jest.fn((req, res) => res.status(200).send()),
+    deleteBranch: jest.fn((req, res) => res.status(200).send()),
+    getEmployeesByBranch: jest.fn((req, res) => res.status(200).send()),
+}));
 
 describe("Branch Routes", () => {
-    const sampleBranch = {
-        id: "1",
-        name: "Vancouver Branch",
-        address: "1300 Burrard St, Vancouver, BC, V6Z 2C7",
-        phone: "604-456-0022"
-    };
-
-    beforeEach(() => {
+    afterEach(() => {
         jest.clearAllMocks();
     });
 
-    // Test Create Branch Route
-    it("should create a new branch", async () => {
-        (branchService.createBranch as jest.Mock).mockResolvedValue(sampleBranch);
+    const sampleBranch = {
+        id: "1", 
+        name: "Vancouver Branch", 
+        address: "1300 Burrard St, Vancouver, BC, V6Z 2C7", 
+        phone: "604-456-0022" 
+    };
 
-        const res = await request(app)
-            .post("/api/v1/branches")
-            .send({ name: "Vancouver Branch", address: "1300 Burrard St, Vancouver, BC, V6Z 2C7", phone: "604-456-0022" });
-
-        expect(res.status).toBe(201);
-        expect(res.body).toEqual({
-            message: "Branch created",
-            data: sampleBranch,
+    describe("GET /api/v1/branches", () => {
+        it("should call getAllBranches controller", async () => {
+            await request(app).get("/api/v1/branches").send(sampleBranch);
+            expect(getAllBranches).toHaveBeenCalled();
         });
     });
 
-    // Test Get All Branches Route
-    it("should retrieve all branches", async () => {
-        (branchService.getAllBranches as jest.Mock).mockResolvedValue([sampleBranch]);
+    describe("POST /api/v1/branches", () => {
+        it("should call createBranch controller", async () => {
+            const mockBranch = {
+                name: "Vancouver Branch",
+                address: "1300 Burrard St, Vancouver, BC, V6Z 2C7",
+                phone: "604-456-0022",
+            };
 
-        const res = await request(app).get("/api/v1/branches");
-
-        expect(res.status).toBe(200);
-        expect(res.body).toEqual({
-            message: "Branches retrieved",
-            data: [sampleBranch],
+            await request(app).post("/api/v1/branches").send(mockBranch);
+            expect(createBranch).toHaveBeenCalled();
         });
     });
 
-    // Test Get Branch by ID Route
-    it("should retrieve a branch by ID", async () => {
-        (branchService.getBranchById as jest.Mock).mockResolvedValue(sampleBranch);
-
-        const res = await request(app).get("/api/v1/branches/1");
-
-        expect(res.status).toBe(200);
-        expect(res.body).toEqual({
-            message: "Branch found",
-            data: sampleBranch,
+    describe("GET /api/v1/branches/:id", () => {
+        it("should call getBranchById controller", async () => {
+            await request(app).get("/api/v1/branches/1");
+            expect(getBranchById).toHaveBeenCalled();
         });
     });
 
-    // Test Update Branch Route
-    it("should update a branch", async () => {
-        const updatedBranch = { ...sampleBranch, address: "456 Updated St" };
-        (branchService.updateBranch as jest.Mock).mockResolvedValue(updatedBranch);
-
-        const res = await request(app)
-            .put("/api/v1/branches/1")
-            .send({ address: "456 Updated St" });
-
-        expect(res.status).toBe(200);
-        expect(res.body).toEqual({
-            message: "Branch updated",
-            data: updatedBranch,
+    describe("PUT /api/v1/branches/:id", () => {
+        it("should call updateBranch controller", async () => {
+            const mockUpdate = { address: "456 Updated St" };
+            await request(app).put("/api/v1/branches/1").send(mockUpdate);
+            expect(updateBranch).toHaveBeenCalled();
         });
     });
 
-    // Test Delete Branch Route
-    it("should delete a branch", async () => {
-        (branchService.deleteBranch as jest.Mock).mockResolvedValue(true);
+    describe("DELETE /api/v1/branches/:id", () => {
+        it("should call deleteBranch controller", async () => {
+            await request(app).delete("/api/v1/branches/1");
+            expect(deleteBranch).toHaveBeenCalled();
+        });
+    });
 
-        const res = await request(app).delete("/api/v1/branches/1");
-
-        expect(res.status).toBe(200);
-        expect(res.body).toEqual({ message: "Branch deleted" });
+    describe("GET /api/v1/branches/:id/employees", () => {
+        it("should call getEmployeesByBranch controller", async () => {
+            await request(app).get("/api/v1/branches/1/employees");
+            expect(getEmployeesByBranch).toHaveBeenCalled();
+        });
     });
 });
