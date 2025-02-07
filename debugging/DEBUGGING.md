@@ -35,7 +35,7 @@
 
 ## Scenario 2: **Debugging Employee Deletion Process**
 
-- **Breakpoint Location:** `employeeController.ts`, line 110 (`deleteEmployee` function)
+- **Breakpoint Location:** `employeeController.ts`, line 120 (`deleteEmployee` function)
 - **Objective:** Debug the employee deletion flow to see how the `DELETE` request is handled, and observe the result when attempting to delete a non-existing employee.
 
 ### Debugger Observations

@@ -8,20 +8,16 @@ import { sampleBranches } from "../sample data/branchData";
 import { Employee } from "../interfaces/employee";
 import { sampleEmployees } from "../sample data/employeeData";
 
-const branches: Branch[] = [];
-const employees: Employee[] = [];
+const branches: Branch[] = [...sampleBranches];
+const employees: Employee[] = [...sampleEmployees];
 
 /**
  * Creates a new branch and adds it to the branches list.
- * @param {Object} branch - The branch details (name, address, phone).
+ * @param {Partial<Branch>} branch - The branch details (name, address, phone).
  * @returns {Promise<Branch>} The newly created branch.
  */
-export const createBranch = async (branch: {
-    name: string;
-    address: string;
-    phone: string;
-}): Promise<Branch> => {
-    const newBranch: Branch = { id: Date.now().toString(), ...branch };
+export const createBranch = async (branch: Partial<Branch>): Promise<Branch> => {
+    const newBranch: Branch = { id: Date.now().toString(), ...branch } as Branch;
     branches.push(newBranch);
     return newBranch;
 };
@@ -37,45 +33,35 @@ export const getAllBranches = async (): Promise<Branch[]> => {
 /**
  * Retrieves a branch by its ID.
  * @param {string} id - The ID of the branch.
- * @param {any} body - Additional request data (if applicable).
- * @returns {Branch[]} An array containing the found branch or an empty array if not found.
+ * @returns {Promise<Branch | null>} The found branch or null if not found.
  */
-export const getBranchById = (id: string, body: any): Branch[] => {
-    const foundBranch = branches.find(branch => branch.id === id);
-    return foundBranch ? [foundBranch] : [];
+export const getBranchById = async (id: string): Promise<Branch | null> => {
+    return branches.find(branch => branch.id === id) || null;
 };
 
 /**
  * Updates a branch by its ID.
  * @param {string} id - The ID of the branch.
- * @param {Object} updatedBranch - The updated branch details (name, address, phone).
- * @returns {Promise<Branch>} The updated branch.
- * @throws {Error} If the branch with the given ID is not found.
+ * @param {Partial<Branch>} updatedBranch - The updated branch details.
+ * @returns {Promise<Branch | null>} The updated branch or null if not found.
  */
-export const updateBranch = async (
-    id: string,
-    updatedBranch: { name: string; address: string; phone: string }
-): Promise<Branch> => {
+export const updateBranch = async (id: string, updatedBranch: Partial<Branch>): Promise<Branch | null> => {
     const index: number = branches.findIndex(branch => branch.id === id);
-    if (index === -1) {
-        throw new Error(`Branch with ID ${id} not found`);
-    }
-    branches[index] = { id, ...updatedBranch };
+    if (index === -1) return null;
+    branches[index] = { ...branches[index], ...updatedBranch };
     return branches[index];
 };
 
 /**
  * Deletes a branch by its ID.
  * @param {string} id - The ID of the branch.
- * @returns {Promise<void>} Resolves when the branch is deleted.
- * @throws {Error} If the branch with the given ID is not found.
+ * @returns {Promise<boolean>} True if deletion was successful, false otherwise.
  */
-export const deleteBranch = async (id: string): Promise<void> => {
+export const deleteBranch = async (id: string): Promise<boolean> => {
     const index: number = branches.findIndex(branch => branch.id === id);
-    if (index === -1) {
-        throw new Error(`Branch with ID ${id} not found`);
-    }
+    if (index === -1) return false;
     branches.splice(index, 1);
+    return true;
 };
 
 /**

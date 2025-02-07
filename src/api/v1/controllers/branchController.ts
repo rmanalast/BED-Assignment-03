@@ -61,13 +61,16 @@ export const getBranchById = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const branchId: Branch[] = await branchService.getBranchById(
-            req.params.id,
-            req.body
-        );
-        res.status(200).json({ message: "Branch found", data: branchId });
+        const branch: Branch | null = await branchService.getBranchById(req.params.id);
+
+        if (!branch) {
+            res.status(404).json({ message: "Branch not found" });
+            return;
+        }
+
+        res.status(200).json({ message: "Branch found", data: branch });
     } catch (error) {
-        next (error);
+        next(error);
     }
 };
 
@@ -84,10 +87,16 @@ export const updateBranch = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const updatedBranch: Branch = await branchService.updateBranch(
+        const updatedBranch: Branch | null = await branchService.updateBranch(
             req.params.id,
             req.body
         );
+
+        if (!updatedBranch) {
+            res.status(404).json({ message: "Branch not found or update failed" });
+            return;
+        }
+
         res.status(200).json({ message: "Branch updated", data: updatedBranch });
     } catch (error) {
         next(error);
@@ -110,7 +119,7 @@ export const deleteBranch = async (
         await branchService.deleteBranch(req.params.id);
         res.status(200).json({ message: "Branch deleted" });
     } catch (error) { 
-        next(error)
+        next(error);
     }
 };
 
@@ -129,9 +138,13 @@ export const getEmployeesByBranch = async (
     try {
         const branchId = req.params.branchId;
         const employees = await branchService.getEmployeesByBranch(branchId);
-        if (employees && employees.length > 0) {
-            res.status(200).json({ message: "Employees retrieved", data: employees });
-        } 
+        
+        if (!employees || employees.length === 0) {
+            res.status(404).json({ message: "No employees found for this branch" });
+            return;
+        }
+
+        res.status(200).json({ message: "Employees retrieved", data: employees });
     } catch (error) {
         next(error);
     }

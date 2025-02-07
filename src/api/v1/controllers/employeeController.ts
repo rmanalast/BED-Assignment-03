@@ -61,13 +61,16 @@ export const getEmployeeById = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const employeeId: Employee[] = await employeeService.getEmployeeById(
-            req.params.id,
-            req.body
-        );
-        res.status(200).json({ message: "Employee found", data: employeeId});
+        const employee: Employee | null = await employeeService.getEmployeeById(req.params.id);
+
+        if (!employee) {
+            res.status(404).json({ message: "Employee not found" });
+            return;
+        }
+
+        res.status(200).json({ message: "Employee found", data: employee });
     } catch (error) {
-        next (error);
+        next(error);
     }
 };
 
@@ -84,10 +87,16 @@ export const updateEmployee = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const updatedEmployee: Employee = await employeeService.updateEmployee(
+        const updatedEmployee: Employee | null = await employeeService.updateEmployee(
             req.params.id,
             req.body
         );
+
+        if (!updatedEmployee) {
+            res.status(404).json({ message: "Employee not found or update failed" });
+            return;
+        }
+
         res.status(200).json({ message: "Employee updated", data: updatedEmployee });
     } catch (error) {
         next(error);
