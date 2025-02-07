@@ -2,7 +2,7 @@
 
 ## Scenario 1: **Debugging Get All Employees Flow**
 
-- **Breakpoint Location:** `employeeController.ts`, line 43 - 51 (`getAllEmployees` function)
+- **Breakpoint Location:** `employeeController.ts`, line 44 (`getAllEmployees` function)
 - **Objective:** Investigate how the system retrieves and returns all employee data when a `GET` request is made to fetch all employees.
 
 ### Debugger Observations
@@ -33,68 +33,68 @@
 
 ---
 
-## Scenario 2: **Debugging Employee Deletion Process**
+## Scenario 2: **Debugging Update Branch Process**
 
-- **Breakpoint Location:** `employeeController.ts`, line 137 - 147 (`deleteEmployee` function)
-- **Objective:** Debug the employee deletion flow to see how the `DELETE` request is handled, and observe the result when attempting to delete a non-existing employee.
+- **Breakpoint Location:** `branchController.ts`, line 87 (`updateBranch` function)
+- **Objective:** Debug the branch update flow to see how the `PUT` request is handled, and observe the result when attempting to update a non-existing branch.
 
 ### Debugger Observations
 
 - **Variable States:**
-  - `deleted`: Boolean indicating whether the employee was successfully deleted.
+  - `updated`: Boolean indicating whether the branch was successfully updated.
   
 - **Call Stack:**
-  - The controller calls `deleteEmployee` in `employeeService.ts` with the employee ID to remove the employee.
+  - The controller calls `updateBranch` in `branchService.ts` with the branch ID and new data to update the branch.
   
 - **Behavior:**
-  - The debugger shows that if the employee ID is valid, the `deleted` variable is set to `true`.
-  - If the employee does not exist, `deleted` is `false`, and a 404 response is returned.
+  - The debugger shows that if the branch ID is valid, the `updated` variable is set to `true`.
+  - If the branch does not exist, `updated` is `false`, and a `404` response is returned.
   
 ### Analysis:
 - **What did you learn from this scenario?**
-  - I confirmed that the deletion process works as expected, and the API correctly handles cases where the employee does not exist.
+  - I confirmed that the update process works as expected, and the API correctly handles cases where the branch does not exist.
 
 - **Did you observe any unexpected behavior?**
-  - No, the behavior was expected. However, it's important to handle cases where no employee is found in a user-friendly manner.
+  - No, the behavior was expected. However, it's important to handle cases where no branch is found in a user-friendly manner.
 
 - **Areas for improvement or refactoring?**
   - Adding more error handling around potential database issues could improve the robustness of the system.
 
 - **How does this enhance your understanding of the overall project?**
-  - This scenario helped me understand how to manage deletion in RESTful APIs and handle cases where the item to be deleted does not exist.
+  - This scenario helped me understand how to manage updates in RESTful APIs and handle cases where the item to be updated does not exist.
 
 ---
 
-## Scenario 3: **Debugging the Update Employee Flow**
+## Scenario 3: **Debugging Get All Branches Test**
 
-- **Breakpoint Location:** `employeeController.ts`, line 107 - 117 (`updateEmployee` function)
-- **Objective:** Investigate how the system handles the updating of employee data when a `PUT` request is made with new employee data.
+- **Breakpoint Location:** `branchController.test.ts`, line 50 - 60 (test for `getAllBranches` function)
+- **Objective:** Investigate how the unit test for the `getAllBranches` function works and observe the behavior when retrieving all branches.
 
 ### Debugger Observations
 
 - **Variable States:**
-  - `updatedEmployee`: The employee data after it has been updated.
-  - `employeeId`: The ID of the employee being updated.
-  - `newData`: The new employee data from the `req.body`.
+  - `mockReq`: The mock request object simulating the incoming request for retrieving branches.
+  - `mockRes`: The mock response object to verify the correct response is returned from the controller.
+  - `sampleBranch`: A sample branch used to simulate the data retrieved by the service.
   
 - **Call Stack:**
-  - The controller calls `updateEmployee` in `employeeService.ts` with the `employeeId` and `newData` to update the employee record.
-  - After updating, the response is sent back to the client with the updated employee data.
-  
+  - The test calls the `getAllBranches` function in `branchController.ts`, which invokes the `getAllBranches` service method in `branchService.ts` to fetch all branches.
+  - The test mocks the `getAllBranches` service to return the `sampleBranch` data.
+  - The controller then sends the response back to the client using `mockRes`.
+
 - **Behavior:**
-  - The debugger shows that the `updatedEmployee` contains the modified employee data after the `updateEmployee` service function is called.
-  - The API responds with a `200` status and the updated employee data.
-  - If the employee ID is invalid or not found, a `404` response is returned.
+  - The debugger shows that the `mockRes.status` function is called with `200`, confirming that the response is successful.
+  - It also verifies that `mockRes.json` is called with the expected data (`sampleBranch`) and a success message.
 
 ### Analysis:
 - **What did you learn from this scenario?**
-  - I confirmed that the employee update process works as expected, and the API correctly returns the updated employee data.
+  - I confirmed that the unit test for retrieving all branches works as expected. The test correctly mocks the service and verifies that the controller responds with a `200` status and the correct branch data.
 
 - **Did you observe any unexpected behavior?**
-  - No unexpected behavior was observed. The update operation behaves as expected when a valid employee ID is provided.
-  
+  - No, the behavior was expected. The mock service call returns the sample data, and the controller responds accordingly.
+
 - **Areas for improvement or refactoring?**
-  - I could add more validation checks to ensure that all necessary fields are provided and are in the correct format before updating the employee data.
+  - The test could be extended to handle cases where no branches are found, ensuring the controller returns an appropriate message or status code in such cases.
 
 - **How does this enhance your understanding of the overall project?**
-  - This scenario deepened my understanding of how updates are handled in the system, particularly in managing existing employee records and ensuring data integrity during modifications.
+  - This scenario helped me understand how mocking works in unit tests, specifically in ensuring that service functions are properly simulated, and how to verify that the controller responds as expected.
