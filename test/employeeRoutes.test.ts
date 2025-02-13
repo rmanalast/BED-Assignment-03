@@ -25,6 +25,7 @@ describe("Employee Routes", () => {
     });
 
     const sampleEmployee = {
+        id: "1",
         name: "Alice Johnson",
         position: "Branch Manager",
         department: "Management",
@@ -56,7 +57,14 @@ describe("Employee Routes", () => {
 
     describe("PUT /api/v1/employees/:id", () => {
         it("should call updateEmployee controller", async () => {
-            await request(app).put("/api/v1/employees/1").send({ position: "Branch Manager" });
+            await request(app).put("/api/v1/employees/1").send({ 
+                name: "Raven Manalastas",
+                position: "IT Support Specialist",
+                department: "IT",
+                email: "raven.manalastas@pixell-river.com",
+                phone: "204-229-6208",
+                branchId: "2"
+             });
             expect(updateEmployee).toHaveBeenCalled();
         });
     });

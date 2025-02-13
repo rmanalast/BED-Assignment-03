@@ -60,7 +60,11 @@ describe("Branch Routes", () => {
 
     describe("PUT /api/v1/branches/:id", () => {
         it("should call updateBranch controller", async () => {
-            const mockUpdate = { address: "456 Updated St" };
+            const mockUpdate = { 
+                name: "Manitoba Branch",
+                address: "476 Beverley St",
+                phone: "204-229-6208"
+             };
             await request(app).put("/api/v1/branches/1").send(mockUpdate);
             expect(updateBranch).toHaveBeenCalled();
         });

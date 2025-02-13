@@ -5,6 +5,8 @@
  */
 import express, { Router } from "express";
 import * as employeeController from "../controllers/employeeController";
+import validateRequest from "../middleware/validateRequest";
+import { employeeSchema } from "../schemas/employeeSchema";
 
 const employeeRouter: Router = express.Router();
 
@@ -25,7 +27,9 @@ const employeeRouter: Router = express.Router();
  *   400:
  *     description: Invalid request data.
  */
-employeeRouter.post("/", employeeController.createEmployee);
+
+// Create a new employee with validation
+employeeRouter.post("/", validateRequest(employeeSchema), employeeController.createEmployee);
 
 /**
  * Get all employees.
@@ -82,7 +86,9 @@ employeeRouter.get("/:id", employeeController.getEmployeeById);
  *   404:
  *     description: Employee not found.
  */
-employeeRouter.put("/:id", employeeController.updateEmployee);
+
+// Update an employee with validation
+employeeRouter.put("/:id", validateRequest(employeeSchema), employeeController.updateEmployee);
 
 /**
  * Delete an employee.
