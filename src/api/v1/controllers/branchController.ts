@@ -44,7 +44,7 @@ export const getAllBranches = async (
         const branches: Branch[] = await branchService.getAllBranches();
         res.status(200).json({ message: "Branches retrieved", data: branches });
     } catch (error) {
-        next (error);
+        next(error);
     }
 };
 
@@ -64,8 +64,7 @@ export const getBranchById = async (
         const branch: Branch | null = await branchService.getBranchById(req.params.id);
 
         if (!branch) {
-            res.status(404).json({ message: "Branch not found" });
-            return;
+            return next(new Error("Branch not found"));
         }
 
         res.status(200).json({ message: "Branch found", data: branch });
@@ -87,14 +86,10 @@ export const updateBranch = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const updatedBranch: Branch | null = await branchService.updateBranch(
-            req.params.id,
-            req.body
-        );
+        const updatedBranch: Branch | null = await branchService.updateBranch(req.params.id, req.body);
 
         if (!updatedBranch) {
-            res.status(404).json({ message: "Branch not found or update failed" });
-            return;
+            return next(new Error("Branch not found or update failed"));
         }
 
         res.status(200).json({ message: "Branch updated", data: updatedBranch });
@@ -116,13 +111,16 @@ export const deleteBranch = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        await branchService.deleteBranch(req.params.id);
+        const deleted = await branchService.deleteBranch(req.params.id);
+        if (!deleted) {
+            return next(new Error("Branch not found or could not be deleted"));
+        }
+
         res.status(200).json({ message: "Branch deleted" });
     } catch (error) { 
         next(error);
     }
 };
-
 /**
  * Retrieves employees assigned to a specific branch.
  * @route GET /branches/:branchId/employees
@@ -140,8 +138,7 @@ export const getEmployeesByBranch = async (
         const employees = await branchService.getEmployeesByBranch(branchId);
         
         if (!employees || employees.length === 0) {
-            res.status(404).json({ message: "No employees found for this branch" });
-            return;
+            return next(new Error("No employees found for this branch"));
         }
 
         res.status(200).json({ message: "Employees retrieved", data: employees });
