@@ -22,7 +22,7 @@ export const createEmployee = async (
     try {
         const newEmployee: Employee = req.body;
         const createdEmployee = await employeeService.createEmployee(newEmployee);
-        res.status(201).json({ message: "Employee created", data: createdEmployee});
+        res.status(201).json({ message: "Employee created", data: createdEmployee });
     } catch (error) {
         next(error);
     }
@@ -44,7 +44,7 @@ export const getAllEmployees = async (
         const employees: Employee[] = await employeeService.getAllEmployees();
         res.status(200).json({ message: "Employees retrieved", data: employees });
     } catch (error) {
-        next (error);
+        next(error);
     }
 };
 
@@ -62,12 +62,7 @@ export const getEmployeeById = async (
 ): Promise<void> => {
     try {
         const employee: Employee | null = await employeeService.getEmployeeById(req.params.id);
-
-        if (!employee) {
-            res.status(404).json({ message: "Employee not found" });
-            return;
-        }
-
+        if (!employee) return next(new Error("Employee not found"));
         res.status(200).json({ message: "Employee found", data: employee });
     } catch (error) {
         next(error);
@@ -87,16 +82,8 @@ export const updateEmployee = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const updatedEmployee: Employee | null = await employeeService.updateEmployee(
-            req.params.id,
-            req.body
-        );
-
-        if (!updatedEmployee) {
-            res.status(404).json({ message: "Employee not found or update failed" });
-            return;
-        }
-
+        const updatedEmployee: Employee | null = await employeeService.updateEmployee(req.params.id, req.body);
+        if (!updatedEmployee) return next(new Error("Employee not found or update failed"));
         res.status(200).json({ message: "Employee updated", data: updatedEmployee });
     } catch (error) {
         next(error);
@@ -116,12 +103,14 @@ export const deleteEmployee = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        await employeeService.deleteEmployee(req.params.id);
-        res.status(200).json({ message: "Employee deleted"});
+        const deleted = await employeeService.deleteEmployee(req.params.id);
+        if (!deleted) return next(new Error("Employee not found or could not be deleted"));
+        res.status(200).json({ message: "Employee deleted" });
     } catch (error) {
-        next(error)
+        next(error);
     }
 };
+
 
 /**
  * Get employees by department.
@@ -136,8 +125,8 @@ export const getEmployeesByDepartment = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const { department } = req.params;
-        const employees = await employeeService.getEmployeesByDepartment(department);
+        const employees = await employeeService.getEmployeesByDepartment(req.params.department);
+        if (!employees || employees.length === 0) return next(new Error("No employees found for this department"));
         res.status(200).json({ message: "Employees retrieved", data: employees });
     } catch (error) {
         next(error);

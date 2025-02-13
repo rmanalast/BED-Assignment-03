@@ -1,7 +1,7 @@
 /**
  * Controller for handling branch-related operations.
  * Provides endpoints for creating, retrieving, updating, and deleting branches,
- * as well as fetching employees associated with a specific branch.
+ * as well as fetching branches associated with a specific branch.
  */
 import { Request, Response, NextFunction } from "express";
 import * as branchService from "../services/branchService";
