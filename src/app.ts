@@ -1,5 +1,6 @@
 import express, { Express } from "express";
 import morgan from "morgan"; // Import Morgan
+import errorHandler from "./api/v1/middleware/errorHandler" // Import 
 
 import employeeRoutes from './api/v1/routes/employeeRoutes'; // Import Employee Routes
 import branchRoutes from './api/v1/routes/branchRoutes'; // Import Branch Routes
@@ -27,6 +28,9 @@ app.use("/api/v1/branches", branchRoutes);
 app.get("/health", (req, res) => {
     res.status(200).send("Server is healthy");
 });
+
+// 
+app.use(errorHandler);
 
 // Export the app
 export default app;
