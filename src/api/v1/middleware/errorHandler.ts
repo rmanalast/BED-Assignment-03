@@ -8,6 +8,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import { errorResponse } from "../models/responseModel";
+import { AppError } from "../utils/customErrors";
 
 /**
  * Extended error interface that includes additional properties
@@ -30,19 +31,23 @@ interface ExtendedError extends Error {
  * @param _next - Express next middleware function (unused but required for middleware signature).
  */
 const errorHandler = (
-    err: ExtendedError,
+    err: Error,
     req: Request,
     res: Response,
     _next: NextFunction
 ): void => {
-    const statusCode: number = err.statusCode || 500;
-    const code: string = err.code || "UNKNOWN_ERROR";
-
-    console.error(`Error: ${err.message} (Code: ${code})`);
-
-    res.status(statusCode).json(
-        errorResponse("An unexpected error occurred. Please try again.", code)
-    );
+    if (err instanceof AppError) {
+        // Handle custom application errors
+        res.status(err.statusCode).json(
+            errorResponse(err.message, err.code)
+        );
+    } else {
+        // Handle unexpected errors
+        console.error(`Unexpected Error: ${err.message}`);
+        res.status(500).json(
+            errorResponse("An unexpected error occurred.", "UNKNOWN_ERROR")
+        );
+    }
 };
 
 export default errorHandler;
