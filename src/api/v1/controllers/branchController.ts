@@ -6,6 +6,7 @@
 import { Request, Response, NextFunction } from "express";
 import * as branchService from "../services/branchService";
 import { Branch } from "../interfaces/branch";
+import { NotFoundError, ValidationError } from "../utils/customErrors";
 
 /**
  * Creates a new branch.
@@ -20,6 +21,10 @@ export const createBranch = async (
     next: NextFunction
 ): Promise<void> => {
     try {
+        if (!req.body.name || !req.body.location) {
+            throw new ValidationError("Branch name and location are required.");
+        }
+        
         const newBranch: Branch = req.body;
         const createdBranch = await branchService.createBranch(newBranch);
         res.status(201).json({ message: "Branch created", data: createdBranch });
@@ -64,7 +69,7 @@ export const getBranchById = async (
         const branch: Branch | null = await branchService.getBranchById(req.params.id);
 
         if (!branch) {
-            return next(new Error("Branch not found"));
+            throw new NotFoundError("Branch not found.");
         }
 
         res.status(200).json({ message: "Branch found", data: branch });
@@ -89,7 +94,7 @@ export const updateBranch = async (
         const updatedBranch: Branch | null = await branchService.updateBranch(req.params.id, req.body);
 
         if (!updatedBranch) {
-            return next(new Error("Branch not found or update failed"));
+            throw new NotFoundError("Branch not found or update failed.");
         }
 
         res.status(200).json({ message: "Branch updated", data: updatedBranch });
@@ -113,7 +118,7 @@ export const deleteBranch = async (
     try {
         const deleted = await branchService.deleteBranch(req.params.id);
         if (!deleted) {
-            return next(new Error("Branch not found or could not be deleted"));
+            throw new NotFoundError("Branch not found or could not be deleted.");
         }
 
         res.status(200).json({ message: "Branch deleted" });
@@ -121,6 +126,7 @@ export const deleteBranch = async (
         next(error);
     }
 };
+
 /**
  * Retrieves employees assigned to a specific branch.
  * @route GET /branches/:branchId/employees
@@ -138,11 +144,11 @@ export const getEmployeesByBranch = async (
         const employees = await branchService.getEmployeesByBranch(branchId);
         
         if (!employees || employees.length === 0) {
-            return next(new Error("No employees found for this branch"));
+            throw new NotFoundError("No employees found for this branch.");
         }
 
         res.status(200).json({ message: "Employees retrieved", data: employees });
     } catch (error) {
         next(error);
     }
-};
+}

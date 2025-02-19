@@ -12,11 +12,22 @@ const branches: Branch[] = [...sampleBranches];
 const employees: Employee[] = [...sampleEmployees];
 
 /**
- * Creates a new branch and adds it to the branches list.
+ * Creates a new branch if it doesn't already exist.
  * @param {Partial<Branch>} branch - The branch details (name, address, phone).
  * @returns {Promise<Branch>} The newly created branch.
  */
 export const createBranch = async (branch: Partial<Branch>): Promise<Branch> => {
+    if (!branch.name || !branch.address || !branch.phone) {
+        throw new Error("All fields (name, address, phone) are required.");
+    }
+
+    const name = branch.name.trim().toLowerCase();
+
+    const existingBranch = branches.find(b => b.name?.toLowerCase() === name);
+    if (existingBranch) {
+        throw new Error(`Branch with name "${branch.name}" already exists.`);
+    }
+
     const newBranch: Branch = { id: Date.now().toString(), ...branch } as Branch;
     branches.push(newBranch);
     return newBranch;
@@ -26,48 +37,64 @@ export const createBranch = async (branch: Partial<Branch>): Promise<Branch> => 
  * Retrieves all branches.
  * @returns {Promise<Branch[]>} An array of all branches.
  */
-export const getAllBranches = async (): Promise<Branch[]> => {
-    return branches;
-};
+export const getAllBranches = async (): Promise<Branch[]> => branches;
 
 /**
  * Retrieves a branch by its ID.
  * @param {string} id - The ID of the branch.
- * @returns {Promise<Branch | null>} The found branch or null if not found.
+ * @returns {Promise<Branch>} The found branch.
  */
-export const getBranchById = async (id: string): Promise<Branch | null> => {
-    return branches.find(branch => branch.id === id) || null;
+export const getBranchById = async (id: string): Promise<Branch> => {
+    const branch = branches.find(branch => branch.id === id);
+    if (!branch) {
+        throw new Error(`Branch with ID "${id}" not found.`);
+    }
+    return branch;
 };
 
 /**
  * Updates a branch by its ID.
  * @param {string} id - The ID of the branch.
  * @param {Partial<Branch>} updatedBranch - The updated branch details.
- * @returns {Promise<Branch | null>} The updated branch or null if not found.
+ * @returns {Promise<Branch>} The updated branch.
  */
-export const updateBranch = async (id: string, updatedBranch: Partial<Branch>): Promise<Branch | null> => {
-    const index: number = branches.findIndex(branch => branch.id === id);
-    if (index === -1) return null;
+export const updateBranch = async (id: string, updatedBranch: Partial<Branch>): Promise<Branch> => {
+    const index = branches.findIndex(branch => branch.id === id);
+    if (index === -1) {
+        throw new Error(`Branch with ID "${id}" not found.`);
+    }
+
     branches[index] = { ...branches[index], ...updatedBranch };
     return branches[index];
 };
 
 /**
- * Deletes a branch by its ID.
+ * Deletes a branch and removes associated employees.
  * @param {string} id - The ID of the branch.
- * @returns {Promise<boolean>} True if deletion was successful, false otherwise.
+ * @returns {Promise<string>} A success message.
  */
-export const deleteBranch = async (id: string): Promise<boolean> => {
-    const index: number = branches.findIndex(branch => branch.id === id);
-    if (index === -1) return false;
+export const deleteBranch = async (id: string): Promise<string> => {
+    const index = branches.findIndex(branch => branch.id === id);
+    if (index === -1) {
+        throw new Error(`Branch with ID "${id}" not found.`);
+    }
+
     branches.splice(index, 1);
-    return true;
+
+    // Remove employees belonging to the deleted branch
+    employees.forEach((employee, idx) => {
+        if (employee.branchId === id) {
+            employees.splice(idx, 1);
+        }
+    });
+
+    return `Branch with ID "${id}" deleted successfully, and its employees have been removed.`;
 };
 
 /**
- * Retrieves all employees associated with a given branch.
- * @param {string} branchId - The ID of the branch.
- * @returns {Promise<Employee[]>} An array of employees belonging to the specified branch.
+ * Retrieves employees for a specific branch.
+ * @param {string} branchId - The branch ID.
+ * @returns {Promise<Employee[]>} Employees of the branch.
  */
 export const getEmployeesByBranch = async (branchId: string): Promise<Employee[]> => {
     return employees.filter(employee => employee.branchId === branchId);
