@@ -21,8 +21,8 @@ export const createBranch = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        if (!req.body.name || !req.body.location) {
-            throw new ValidationError("Branch name and location are required.");
+        if (!req.body.name || !req.body.address || !req.body.phone) {
+            throw new ValidationError("Branch name, address, and phone are required.");
         }
         
         const newBranch: Branch = req.body;
