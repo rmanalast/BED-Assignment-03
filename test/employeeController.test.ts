@@ -58,10 +58,18 @@ describe("Employee Controller", () => {
 
     // Test Update Employee
     it("should update an employee", async () => {
-        const updatedEmployee = { ...sampleEmployee, position: "Regional Manager" };
+        const updatedEmployee = { ...sampleEmployee, 
+            name: "Raven Manalastas", 
+            position: "Customer Service Supervisor",
+            department: "Customer Service"
+         };
         (employeeService.updateEmployee as jest.Mock).mockResolvedValue(updatedEmployee);
         mockReq.params = { id: "1" };
-        mockReq.body = { position: "Regional Manager" };
+        mockReq.body = { 
+            name: "Raven Manalastas", 
+            position: "Customer Service Supervisor",
+            department: "Customer Service"
+        };
 
         await employeeController.updateEmployee(mockReq as Request, mockRes as Response, mockNext);
 
