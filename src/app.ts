@@ -1,6 +1,6 @@
 import express, { Express } from "express";
 import morgan from "morgan"; // Import Morgan
-import errorHandler from "./api/v1/middleware/errorHandler" // Import 
+import errorHandler from "./api/v1/middleware/errorHandler" // Import Error Handler
 
 import employeeRoutes from './api/v1/routes/employeeRoutes'; // Import Employee Routes
 import branchRoutes from './api/v1/routes/branchRoutes'; // Import Branch Routes
