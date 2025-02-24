@@ -6,4 +6,6 @@ export interface Employee {
     email: string;
     phone: string;
     branchId: string;
+    createdAt?: Date | null;
+    updatedAt?: Date | null;
 }

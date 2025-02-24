@@ -1,89 +1,141 @@
-import { BranchService } from "../src/api/v1/services/branchService";
-import { BranchRepository } from "../src/api/v1/repositories/branchRepository";
-import { ValidationError, NotFoundError } from "../src/api/v1/utils/customErrors";
+import {
+    createBranch,
+    getAllBranches,
+    getBranchById,
+    updateBranch,
+    deleteBranch,
+    getEmployeesByBranch
+} from "../src/api/v1/services/branchService";
+import {
+    createDocument,
+    getDocuments,
+    getDocumentsByFieldValue,
+    updateDocument,
+    deleteDocument
+} from "../src/api/v1/utils/firestoreUtils";
 
-// Mock Firestore Repository
-jest.mock("../src/api/v1/repositories/branchRepository");
-
-const mockBranchRepository = new BranchRepository() as jest.Mocked<BranchRepository>;
-const branchService = new BranchService(mockBranchRepository);
+// Mock Firestore Utils
+jest.mock("../src/api/v1/utils/firestoreUtils", () => ({
+    createDocument: jest.fn(),
+    getDocuments: jest.fn(),
+    getDocumentsByFieldValue: jest.fn(),
+    updateDocument: jest.fn(),
+    deleteDocument: jest.fn()
+}));
 
 describe("Branch Service", () => {
+    const mockBranchData = { name: "Main Branch", address: "123 Street", phone: "123-456-7890" };
+    const mockBranchId = "branch123";
+    const mockEmployeeData = { id: "emp123", branchId: "branch123", name: "John Doe", role: "Manager" };
+    const mockBranch = { id: mockBranchId, ...mockBranchData };
+
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    it("should create a branch successfully", async () => {
-        mockBranchRepository.createBranch.mockResolvedValue("1");
+    describe("createBranch", () => {
+        it("should create a branch successfully", async () => {
+            (createDocument as jest.Mock).mockResolvedValue(mockBranchId);
+            
+            const result = await createBranch(mockBranchData);
 
-        const branchData = {
-            name: "Main Branch",
-            address: "123 Street",
-            phone: "123-456-7890"
-        };
-
-        const branch = await branchService.createBranch(branchData);
-
-        expect(branch).toEqual({ ...branchData, id: "1" });
-        expect(mockBranchRepository.createBranch).toHaveBeenCalledWith(branchData);
+            expect(result).toEqual({ ...mockBranchData, id: mockBranchId });
+            expect(createDocument).toHaveBeenCalledWith("branches", mockBranchData);
+        });
     });
 
-    it("should throw a ValidationError if required fields are missing", async () => {
-        await expect(branchService.createBranch({ name: "Only Name" }))
-            .rejects.toThrow(ValidationError);
+    describe("getAllBranches", () => {
+        it("should retrieve all branches successfully", async () => {
+            const mockSnapshot = {
+                docs: [
+                    { id: "branch1", data: () => mockBranchData },
+                    { id: "branch2", data: () => mockBranchData }
+                ]
+            };
+            (getDocuments as jest.Mock).mockResolvedValue(mockSnapshot);
+
+            const result = await getAllBranches();
+
+            expect(result).toEqual([
+                { id: "branch1", ...mockBranchData },
+                { id: "branch2", ...mockBranchData }
+            ]);
+            expect(getDocuments).toHaveBeenCalledWith("branches");
+        });
     });
 
-    it("should retrieve all branches", async () => {
-        const sampleBranch = { id: "1", name: "Branch A", address: "123 St", phone: "123-456-7890" };
-        mockBranchRepository.getAllBranches.mockResolvedValue([sampleBranch]);
+    describe("getBranchById", () => {
+        it("should retrieve a branch by ID", async () => {
+            const mockSnapshot = {
+                docs: [{ id: mockBranchId, data: () => mockBranchData }]
+            };
+            (getDocumentsByFieldValue as jest.Mock).mockResolvedValue(mockSnapshot);
 
-        const branches = await branchService.getAllBranches();
+            const result = await getBranchById(mockBranchId);
 
-        expect(branches).toEqual([sampleBranch]);
-        expect(mockBranchRepository.getAllBranches).toHaveBeenCalled();
+            expect(result).toEqual(mockBranch);
+            expect(getDocumentsByFieldValue).toHaveBeenCalledWith("branches", "id", mockBranchId);
+        });
+
+        it("should throw an error if branch not found", async () => {
+            const mockSnapshot = { empty: true };
+            (getDocumentsByFieldValue as jest.Mock).mockResolvedValue(mockSnapshot);
+
+            await expect(getBranchById("nonExistentBranch")).rejects.toThrow("Branch with ID \"nonExistentBranch\" not found.");
+        });
     });
 
-    it("should retrieve a branch by ID", async () => {
-        const sampleBranch = { id: "1", name: "Branch A", address: "123 St", phone: "123-456-7890" };
-        mockBranchRepository.getBranchById.mockResolvedValue(sampleBranch);
+    describe("updateBranch", () => {
+        it("should update a branch successfully", async () => {
+            const updatedBranch = { name: "Updated Branch" };
+            (updateDocument as jest.Mock).mockResolvedValue(null);
 
-        const branch = await branchService.getBranchById("1");
+            const result = await updateBranch(mockBranchId, updatedBranch);
 
-        expect(branch).toEqual(sampleBranch);
-        expect(mockBranchRepository.getBranchById).toHaveBeenCalledWith("1");
+            expect(result).toEqual({ id: mockBranchId, ...updatedBranch });
+            expect(updateDocument).toHaveBeenCalledWith("branches", mockBranchId, updatedBranch);
+        });
+
+        it("should throw an error if branch not found", async () => {
+            (updateDocument as jest.Mock).mockRejectedValue(new Error("Branch not found"));
+
+            await expect(updateBranch("nonExistentBranch", { name: "Updated Branch" }))
+                .rejects.toThrow("Branch not found");
+        });
     });
 
-    it("should throw NotFoundError if branch ID does not exist", async () => {
-        mockBranchRepository.getBranchById.mockResolvedValue(null);
+    describe("deleteBranch", () => {
+        it("should delete a branch successfully", async () => {
+            (getDocumentsByFieldValue as jest.Mock).mockResolvedValue({
+                empty: false,
+                docs: [{ id: mockBranchId }]
+            });
+            (deleteDocument as jest.Mock).mockResolvedValue(null);
 
-        await expect(branchService.getBranchById("2")).rejects.toThrow(NotFoundError);
+            const result = await deleteBranch(mockBranchId);
+
+            expect(result).toBe(true);
+            expect(deleteDocument).toHaveBeenCalledWith("branches", mockBranchId);
+        });
+
+        it("should throw an error if branch not found", async () => {
+            (getDocumentsByFieldValue as jest.Mock).mockResolvedValue({ empty: true });
+
+            await expect(deleteBranch("nonExistentBranch")).rejects.toThrow("Branch with ID \"nonExistentBranch\" not found.");
+        });
     });
 
-    it("should update a branch successfully", async () => {
-        const sampleBranch = { id: "1", name: "Branch A", address: "Old Address", phone: "123-456-7890" };
-        mockBranchRepository.getBranchById.mockResolvedValue(sampleBranch);
-        mockBranchRepository.updateBranch.mockResolvedValue();
+    describe("getEmployeesByBranch", () => {
+        it("should retrieve employees by branch", async () => {
+            const mockEmployeeSnapshot = {
+                docs: [{ id: "emp123", data: () => mockEmployeeData }]
+            };
+            (getDocumentsByFieldValue as jest.Mock).mockResolvedValue(mockEmployeeSnapshot);
 
-        const updatedBranch = await branchService.updateBranch("1", { address: "New Address" });
+            const result = await getEmployeesByBranch(mockBranchId);
 
-        expect(updatedBranch).toEqual({ ...sampleBranch, id: "1", address: "New Address" });
-        expect(mockBranchRepository.updateBranch).toHaveBeenCalledWith("1", { address: "New Address" });
-    });
-
-    it("should delete a branch successfully", async () => {
-        const sampleBranch = { id: "1", name: "Branch A", address: "123 St", phone: "123-456-7890" };
-        mockBranchRepository.getBranchById.mockResolvedValue(sampleBranch);
-        mockBranchRepository.deleteBranch.mockResolvedValue();
-
-        const message = await branchService.deleteBranch("1");
-
-        expect(message).toBe('Branch with ID "1" deleted successfully.');
-        expect(mockBranchRepository.deleteBranch).toHaveBeenCalledWith("1");
-    });
-
-    it("should throw NotFoundError if deleting a non-existing branch", async () => {
-        mockBranchRepository.getBranchById.mockResolvedValue(null);
-
-        await expect(branchService.deleteBranch("2")).rejects.toThrow(NotFoundError);
+            expect(result).toEqual([mockEmployeeData]);
+            expect(getDocumentsByFieldValue).toHaveBeenCalledWith("branches", "branchId", mockBranchId);
+        });
     });
 });

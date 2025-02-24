@@ -1,34 +1,28 @@
 import { Request, Response, NextFunction } from "express";
 import * as branchController from "../src/api/v1/controllers/branchController";
-import { BranchService } from "../src/api/v1/services/branchService"; // Import the class
+import * as branchService from "../src/api/v1/services/branchService";
 
-jest.mock("../src/api/v1/services/branchService"); // Mock the entire service file
+jest.mock("../src/api/v1/services/branchService", () => ({
+    createBranch: jest.fn(),
+    getAllBranches: jest.fn(),
+    getBranchById: jest.fn(),
+    updateBranch: jest.fn(),
+    deleteBranch: jest.fn(),
+    getEmployeesByBranch: jest.fn(),
+}));
 
 describe("Branch Controller", () => {
     let mockReq: Partial<Request>;
     let mockRes: Partial<Response>;
     let mockNext: NextFunction;
-    let branchServiceInstance: jest.Mocked<BranchService>; // Define the mocked instance
 
     beforeEach(() => {
         jest.clearAllMocks();
         mockReq = { params: {}, body: {} };
         mockRes = { status: jest.fn().mockReturnThis(), json: jest.fn() };
         mockNext = jest.fn();
-
-        // Create a mocked instance of BranchService
-        branchServiceInstance = new BranchService() as jest.Mocked<BranchService>;
-
-        // Mock the methods on the BranchService instance
-        branchServiceInstance.createBranch = jest.fn();
-        branchServiceInstance.getAllBranches = jest.fn();
-        branchServiceInstance.getBranchById = jest.fn();
-        branchServiceInstance.updateBranch = jest.fn();
-        branchServiceInstance.deleteBranch = jest.fn();
-        branchServiceInstance.getEmployeesByBranch = jest.fn();
     });
 
-    // Sample data
     const sampleBranch = {
         id: "1",
         name: "Vancouver Branch",
@@ -48,49 +42,52 @@ describe("Branch Controller", () => {
 
     // Test Create Branch
     it("should create a new branch", async () => {
-        branchServiceInstance.createBranch.mockResolvedValue(sampleBranch);
+        (branchService.createBranch as jest.Mock).mockResolvedValue(sampleBranch);
         mockReq.body = { name: "Vancouver Branch", address: "1300 Burrard St, Vancouver, BC, V6Z 2C7", phone: "604-456-0022" };
 
         await branchController.createBranch(mockReq as Request, mockRes as Response, mockNext);
 
         expect(mockRes.status).toHaveBeenCalledWith(201);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Branch created",
+            message: "Branch Created",
             data: sampleBranch,
+            status: "success",
         });
     });
 
     // Test Get All Branches
     it("should retrieve all branches", async () => {
-        branchServiceInstance.getAllBranches.mockResolvedValue([sampleBranch]);
+        (branchService.getAllBranches as jest.Mock).mockResolvedValue([sampleBranch]);
 
         await branchController.getAllBranches(mockReq as Request, mockRes as Response, mockNext);
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Branches retrieved",
+            message: "Branches Retrieved",
             data: [sampleBranch],
+            status: "success",
         });
     });
 
     // Test Get Branch by ID
     it("should retrieve a branch by ID", async () => {
-        branchServiceInstance.getBranchById.mockResolvedValue(sampleBranch);
+        (branchService.getBranchById as jest.Mock).mockResolvedValue(sampleBranch);
         mockReq.params = { id: "1" };
 
         await branchController.getBranchById(mockReq as Request, mockRes as Response, mockNext);
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Branch found",
+            message: "Branch Retrieved",
             data: sampleBranch,
+            status: "success",
         });
     });
 
     // Test Update Branch
     it("should update a branch", async () => {
         const updatedBranch = { ...sampleBranch, address: "456 Updated St" };
-        branchServiceInstance.updateBranch.mockResolvedValue(updatedBranch);
+        (branchService.updateBranch as jest.Mock).mockResolvedValue(updatedBranch);
         mockReq.params = { id: "1" };
         mockReq.body = { address: "456 Updated St" };
 
@@ -98,35 +95,39 @@ describe("Branch Controller", () => {
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Branch updated",
+            message: "Branch Updated",
             data: updatedBranch,
+            status: "success", 
         });
     });
 
     // Test Delete Branch
     it("should delete a branch", async () => {
-        branchServiceInstance.deleteBranch.mockResolvedValue('Branch with ID "1" deleted successfully.');
-
+        (branchService.deleteBranch as jest.Mock).mockResolvedValue(true);
         mockReq.params = { id: "1" };
 
         await branchController.deleteBranch(mockReq as Request, mockRes as Response, mockNext);
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
-        expect(mockRes.json).toHaveBeenCalledWith({ message: "Branch deleted" });
+        expect(mockRes.json).toHaveBeenCalledWith({
+            message: "Branch Deleted",
+            status: "success",
+        });
     });
 
     // Test Get All Employees for a Branch
     it("should retrieve all employees for a given branch", async () => {
         const sampleEmployees = [sampleEmployee];
-        branchServiceInstance.getEmployeesByBranch.mockResolvedValue(sampleEmployees);
+        (branchService.getEmployeesByBranch as jest.Mock).mockResolvedValue(sampleEmployees);
         mockReq.params = { branchId: "1" };
 
         await branchController.getEmployeesByBranch(mockReq as Request, mockRes as Response, mockNext);
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Employees retrieved",
+            message: "Employees Retrieved",
             data: sampleEmployees,
+            status: "success",
         });
     });
 });

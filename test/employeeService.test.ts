@@ -1,103 +1,148 @@
-import * as employeeService from '../src/api/v1/services/employeeService';
-import { EmployeeRepository } from '../src/api/v1/repositories/employeeRepository';
-import { ServiceError, ValidationError, NotFoundError } from '../src/api/v1/utils/customErrors';
+import {
+    createEmployee,
+    getAllEmployees,
+    getEmployeeById,
+    updateEmployee,
+    deleteEmployee,
+    getEmployeesByDepartment
+} from '../src/api/v1/services/employeeService';
+import {
+    createDocument,
+    getDocuments,
+    getDocumentsByFieldValue,
+    updateDocument,
+    deleteDocument
+} from "../src/api/v1/utils/firestoreUtils";
 
-jest.mock('../src/api/v1/repositories/employeeRepository');
-
-const mockEmployeeRepository = new EmployeeRepository() as jest.Mocked<EmployeeRepository>;
-const service = new employeeService.EmployeeService(mockEmployeeRepository);
+// Mock Firestore Utils
+jest.mock("../src/api/v1/utils/firestoreUtils", () => ({
+    createDocument: jest.fn(),
+    getDocuments: jest.fn(),
+    getDocumentsByFieldValue: jest.fn(),
+    updateDocument: jest.fn(),
+    deleteDocument: jest.fn()
+}));
 
 describe("Employee Service", () => {
+    const mockEmployeeData = {
+        name: "John Doe",
+        position: "Manager",
+        department: "HR",
+        email: "johndoe@company.com",
+        phone: "123-456-7890",
+        branchId: "branch123"
+    };
+    const mockEmployeeId = "emp123";
+    const mockEmployee = { id: mockEmployeeId, ...mockEmployeeData };
+    const mockDepartment = "HR";
+
     beforeEach(() => {
         jest.clearAllMocks();
+        // Mock Firestore responses
+        (getDocumentsByFieldValue as jest.Mock).mockResolvedValue({
+            docs: [{ id: mockEmployeeId, data: () => mockEmployeeData }]
+        });
     });
 
-    it("should create an employee successfully", async () => {
-        mockEmployeeRepository.createEmployee.mockResolvedValue("1");
+    describe("createEmployee", () => {
+        it("should create an employee successfully", async () => {
+            (createDocument as jest.Mock).mockResolvedValue(mockEmployeeId);
 
-        const employeeData = {
-            name: "Jane Doe",
-            position: "Assistant Manager",
-            branchId: "1",
-            email: "janedoe@company.com",
-            phone: "604-765-4321"
-        };
+            const result = await createEmployee(mockEmployeeData);
 
-        const employee = await service.createEmployee(employeeData);
-
-        expect(employee).toEqual({ ...employeeData, id: "1" });
-        expect(mockEmployeeRepository.createEmployee).toHaveBeenCalledWith(employeeData);
+            expect(result).toEqual({ ...mockEmployeeData, id: mockEmployeeId });
+            expect(createDocument).toHaveBeenCalledWith("employees", mockEmployeeData);
+        });
     });
 
-    it("should throw a ValidationError if required fields are missing", async () => {
-        await expect(service.createEmployee({ name: "Only Name" }))
-            .rejects.toThrow(ValidationError);
+    describe("getAllEmployees", () => {
+        it("should retrieve all employees", async () => {
+            const mockSnapshot = {
+                docs: [
+                    { id: "emp1", data: () => mockEmployeeData },
+                    { id: "emp2", data: () => mockEmployeeData }
+                ]
+            };
+            (getDocuments as jest.Mock).mockResolvedValue(mockSnapshot);
+
+            const result = await getAllEmployees();
+
+            expect(result).toEqual([
+                { id: "emp1", ...mockEmployeeData },
+                { id: "emp2", ...mockEmployeeData }
+            ]);
+            expect(getDocuments).toHaveBeenCalledWith("employees");
+        });
     });
 
-    it("should retrieve all employees", async () => {
-        const sampleEmployee = { id: "1", name: "Alice Johnson", position: "Branch Manager" };
-        mockEmployeeRepository.getAllEmployees.mockResolvedValue([sampleEmployee]);
+    describe("getEmployeeById", () => {
+        it("should retrieve an employee by ID", async () => {
+            const mockSnapshot = {
+                docs: [{ id: mockEmployeeId, data: () => mockEmployeeData }]
+            };
+            (getDocumentsByFieldValue as jest.Mock).mockResolvedValue(mockSnapshot);
 
-        const employees = await service.getAllEmployees();
+            const result = await getEmployeeById(mockEmployeeId);
 
-        expect(employees).toEqual([sampleEmployee]);
-        expect(mockEmployeeRepository.getAllEmployees).toHaveBeenCalled();
+            expect(result).toEqual(mockEmployee);
+            expect(getDocumentsByFieldValue).toHaveBeenCalledWith("employees", "id", mockEmployeeId);
+        });
+
+        it("should throw an error if employee not found", async () => {
+            const mockSnapshot = { empty: true };
+            (getDocumentsByFieldValue as jest.Mock).mockResolvedValue(mockSnapshot);
+
+            await expect(getEmployeeById("nonExistentEmployee"))
+                .rejects
+                .toThrow("Employee with ID \"nonExistentEmployee\" not found.");
+        });
     });
 
-    it("should retrieve an employee by ID", async () => {
-        const sampleEmployee = { id: "1", name: "Alice Johnson", position: "Branch Manager" };
-        mockEmployeeRepository.getEmployeeById.mockResolvedValue(sampleEmployee);
-
-        const employee = await service.getEmployeeById("1");
-
-        expect(employee).toEqual(sampleEmployee);
-        expect(mockEmployeeRepository.getEmployeeById).toHaveBeenCalledWith("1");
-    });
-
-    it("should throw NotFoundError if employee ID does not exist", async () => {
-        mockEmployeeRepository.getEmployeeById.mockResolvedValue(null);
-
-        await expect(service.getEmployeeById("2"))
-            .rejects.toThrow(NotFoundError);
-    });
-
-    it("should update an employee successfully", async () => {
-        const sampleEmployee = { id: "1", name: "Alice Johnson", position: "Branch Manager" };
-        mockEmployeeRepository.getEmployeeById.mockResolvedValue(sampleEmployee);
-        mockEmployeeRepository.updateEmployee.mockResolvedValue();
-
-        const updatedEmployee = await service.updateEmployee("1", { phone: "604-111-2222" });
-
-        expect(updatedEmployee).toEqual({ ...sampleEmployee, phone: "604-111-2222" });
-        expect(mockEmployeeRepository.updateEmployee).toHaveBeenCalledWith("1", { phone: "604-111-2222" });
-    });
-
-    it("should delete an employee successfully", async () => {
-        const sampleEmployee = { id: "1", name: "Alice Johnson", position: "Branch Manager" };
-        mockEmployeeRepository.getEmployeeById.mockResolvedValue(sampleEmployee);
-        mockEmployeeRepository.deleteEmployee.mockResolvedValue();
-
-        const message = await service.deleteEmployee("1");
-
-        expect(message).toBe('Employee with ID "1" deleted successfully.');
-        expect(mockEmployeeRepository.deleteEmployee).toHaveBeenCalledWith("1");
-    });
-
-    it("should throw NotFoundError if deleting a non-existing employee", async () => {
-        mockEmployeeRepository.getEmployeeById.mockResolvedValue(null);
-
-        await expect(service.deleteEmployee("2"))
-            .rejects.toThrow(NotFoundError);
-    });
-
-    it("should retrieve employees by department", async () => {
-        const sampleEmployee = { id: "1", name: "John Doe", position: "Developer", departmentId: "D1" };
-        mockEmployeeRepository.getEmployeesByDepartment.mockResolvedValue([sampleEmployee]);
+    describe("updateEmployee", () => {
+        it("should update an employee successfully", async () => {
+            const updatedEmployee = { ...mockEmployeeData, phone: "987-654-3210" };
+            const updatedEmployeeWithId = { id: mockEmployeeId, ...updatedEmployee };
     
-        const departmentId = "D1";
-        const employees = await service.getEmployeesByDepartment(departmentId);
+            (updateDocument as jest.Mock).mockResolvedValue(null);
     
-        expect(employees).toEqual([sampleEmployee]);
-        expect(mockEmployeeRepository.getEmployeesByDepartment).toHaveBeenCalledWith(departmentId);
+            const result = await updateEmployee(mockEmployeeId, updatedEmployee);
+    
+            // Ensure the result includes the `id` field and matches the updated employee data
+            expect(result).toEqual(updatedEmployeeWithId);
+            expect(updateDocument).toHaveBeenCalledWith("employees", mockEmployeeId, updatedEmployee);
+        });
+    });
+
+    describe("deleteEmployee", () => {
+        it("should delete an employee successfully", async () => {
+            (deleteDocument as jest.Mock).mockResolvedValue(null);
+
+            const result = await deleteEmployee(mockEmployeeId);
+
+            expect(result).toBe(true);
+            expect(deleteDocument).toHaveBeenCalledWith("employees", mockEmployeeId);
+        });
+
+        it("should throw an error if employee not found", async () => {
+            (deleteDocument as jest.Mock).mockRejectedValue(new Error("Employee with ID \"nonExistentEmployee\" not found."));
+
+            await expect(deleteEmployee("nonExistentEmployee"))
+                .rejects
+                .toThrow("Employee with ID \"nonExistentEmployee\" not found.");
+        });
+    });
+
+    describe("getEmployeesByDepartment", () => {
+        it("should retrieve employees by department", async () => {
+            const mockSnapshot = {
+                docs: [{ id: "emp123", data: () => ({ ...mockEmployeeData, id: "emp123" }) }]
+            };
+            (getDocumentsByFieldValue as jest.Mock).mockResolvedValue(mockSnapshot);
+
+            const result = await getEmployeesByDepartment(mockDepartment);
+
+            expect(result).toEqual([mockEmployee]);
+            expect(getDocumentsByFieldValue).toHaveBeenCalledWith("employees", "department", mockDepartment);
+        });
     });
 });
