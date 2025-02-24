@@ -8,19 +8,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import { errorResponse } from "../models/responseModel";
-import { AppError } from "../utils/customErrors";
-
-/**
- * Extended error interface that includes additional properties
- * for structured error handling.
- */
-interface ExtendedError extends Error {
-    /** Optional error code representing the type of error */
-    code?: string;
-    
-    /** Optional HTTP status code for the error response */
-    statusCode?: number;
-}
+import { AppError, RepositoryError, ServiceError } from "../utils/customErrors";
 
 /**
  * Global error-handling middleware.
@@ -35,19 +23,39 @@ const errorHandler = (
     req: Request,
     res: Response,
     _next: NextFunction
-): void => {
+): void => {  // Return type is 'void', not 'Response'
+    // Handle RepositoryError (for database-related issues)
+    if (err instanceof RepositoryError) {
+        res.status(500).json({
+            error: "Database error occurred",
+            details: err.message
+        });
+        return;
+    }
+
+    // Handle ServiceError (for service or logic-related issues)
+    if (err instanceof ServiceError) {
+        res.status(400).json({
+            error: "Service error occurred",
+            details: err.message
+        });
+        return;
+    }
+
+    // Handle AppError (for custom application errors)
     if (err instanceof AppError) {
-        // Handle custom application errors
         res.status(err.statusCode).json(
             errorResponse(err.message, err.code)
         );
-    } else {
-        // Handle unexpected errors
-        console.error(`Unexpected Error: ${err.message}`);
-        res.status(500).json(
-            errorResponse("An unexpected error occurred.", "UNKNOWN_ERROR")
-        );
+        return;
     }
+
+    // Handle unexpected errors (catch-all for any errors that don't match the above)
+    console.error(`Unexpected Error: ${err.message}`);
+    res.status(500).json(
+        errorResponse("An unexpected error occurred.", "UNKNOWN_ERROR")
+    );
+    return;
 };
 
 export default errorHandler;

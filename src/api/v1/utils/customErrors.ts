@@ -86,4 +86,40 @@ class ForbiddenError extends AppError {
     }
 }
 
-export { AppError, ValidationError, NotFoundError, UnauthorizedError, ForbiddenError };
+/**
+ * Represents an error occurring at the repository layer (e.g., database issues).
+ * Extends AppError with a default message, status code 500, and error code "REPOSITORY_ERROR".
+ */
+class RepositoryError extends AppError {
+    /**
+     * 
+     * @param message 
+     */
+    constructor(message = "Database operation failed") {
+        super(message, 500, "REPOSITORY_ERROR");
+    }
+}
+
+/**
+ * Represents an error occurring at the service layer (e.g., business logic failures).
+ * Extends AppError with a default message, status code 500, and error code "SERVICE_ERROR".
+ */
+class ServiceError extends AppError {
+    /**
+     * 
+     * @param message 
+     */
+    constructor(message = "Service operation failed") {
+        super(message, 500, "SERVICE_ERROR");
+    }
+}
+
+export { 
+    AppError, 
+    ValidationError, 
+    NotFoundError, 
+    UnauthorizedError, 
+    ForbiddenError, 
+    RepositoryError, 
+    ServiceError 
+};

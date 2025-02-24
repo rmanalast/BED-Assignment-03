@@ -1,91 +1,129 @@
-/**
- * Service functions for managing employees and their related operations.
- * Includes functions for creating, retrieving, updating, and deleting employees,
- * as well as retrieving employees by department.
- */
 import { Employee } from "../interfaces/employee";
-import { sampleEmployees } from "../sample data/employeeData";
-import { Branch } from "../interfaces/branch";
-import { sampleBranches } from "../sample data/branchData";
-
-const branches: Branch[] = [...sampleBranches];
-const employees: Employee[] = [...sampleEmployees];
+import { EmployeeRepository } from "../repositories/employeeRepository";
+import { ServiceError, NotFoundError, ValidationError } from "../utils/customErrors";
 
 /**
- * Retrieves all employees.
- * @returns {Promise<Employee[]>} List of employees.
+ * Service class to manage employees and their operations.
+ * Includes functions for creating, retrieving, updating, and deleting employees.
  */
-export const getAllEmployees = async (): Promise<Employee[]> => employees;
+export class EmployeeService {
+    private employeeRepository: EmployeeRepository;
 
-/**
- * Retrieves an employee by their ID.
- * @param {string} id - The employee ID.
- * @returns {Promise<Employee>} The found employee.
- */
-export const getEmployeeById = async (id: string): Promise<Employee> => {
-    const employee = employees.find(employee => employee.id === id);
-    if (!employee) {
-        throw new Error(`Employee with ID "${id}" not found.`);
-    }
-    return employee;
-};
-
-/**
- * Creates a new employee if their branch exists.
- * @param {Omit<Employee, 'id'>} employee - Employee details.
- * @returns {Promise<Employee>} The new employee.
- */
-export const createEmployee = async (employee: Omit<Employee, 'id'>): Promise<Employee> => {
-    if (!employee.name || !employee.department || !employee.branchId) {
-        throw new Error("All fields (name, department, branchId) are required.");
+    constructor(employeeRepository?: EmployeeRepository) {
+        this.employeeRepository = employeeRepository || new EmployeeRepository();
     }
 
-    const branchExists = branches.some(branch => branch.id === employee.branchId);
-    if (!branchExists) {
-        throw new Error(`Branch with ID "${employee.branchId}" does not exist.`);
+    /**
+     * Creates a new employee.
+     * @param {Partial<Employee>} employee - The employee details (name, position, email, phone, branchId).
+     * @returns {Promise<Employee>} The newly created employee.
+     * @throws {ValidationError} If required fields are missing.
+     */
+    async createEmployee(employee: Partial<Employee>): Promise<Employee> {
+        if (!employee.name || !employee.position || !employee.branchId || !employee.email || !employee.phone) {
+            throw new ValidationError("All fields (name, position, email, phone, branchId) are required.");
+        }
+
+        try {
+            const employeeId = await this.employeeRepository.createEmployee(employee);
+            return { id: employeeId, ...employee } as Employee;
+        } catch (error) {
+            throw new ServiceError(`Failed to create employee: ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+        }
     }
 
-    const newEmployee: Employee = { id: Date.now().toString(), ...employee };
-    employees.push(newEmployee);
-    return newEmployee;
-};
-
-/**
- * Updates an employee by ID.
- * @param {string} id - The employee ID.
- * @param {Partial<Employee>} updatedEmployee - Updated details.
- * @returns {Promise<Employee>} The updated employee.
- */
-export const updateEmployee = async (id: string, updatedEmployee: Partial<Employee>): Promise<Employee> => {
-    const index = employees.findIndex(employee => employee.id === id);
-    if (index === -1) {
-        throw new Error(`Employee with ID "${id}" not found.`);
+    /**
+     * Retrieves all employees.
+     * @returns {Promise<Employee[]>} An array of all employees.
+     * @throws {ServiceError} If retrieval fails.
+     */
+    async getAllEmployees(): Promise<Employee[]> {
+        try {
+            return await this.employeeRepository.getAllEmployees();
+        } catch (error) {
+            throw new ServiceError(`Failed to fetch employees: ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+        }
     }
 
-    employees[index] = { ...employees[index], ...updatedEmployee };
-    return employees[index];
-};
-
-/**
- * Deletes an employee by ID.
- * @param {string} id - The employee ID.
- * @returns {Promise<string>} Success message.
- */
-export const deleteEmployee = async (id: string): Promise<string> => {
-    const index = employees.findIndex(employee => employee.id === id);
-    if (index === -1) {
-        throw new Error(`Employee with ID "${id}" not found.`);
+    /**
+     * Retrieves an employee by its ID.
+     * @param {string} id - The ID of the employee.
+     * @returns {Promise<Employee>} The found employee.
+     * @throws {NotFoundError} If the employee is not found.
+     * @throws {ServiceError} If retrieval fails.
+     */
+    async getEmployeeById(id: string): Promise<Employee> {
+        try {
+            const employee = await this.employeeRepository.getEmployeeById(id);
+            if (!employee) {
+                throw new NotFoundError(`Employee with ID "${id}" not found.`);
+            }
+            return employee;
+        } catch (error) {
+            if (error instanceof NotFoundError) {
+                throw error;
+            }
+            throw new ServiceError(`Failed to fetch employee by ID (${id}): ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+        }
     }
 
-    employees.splice(index, 1);
-    return `Employee with ID "${id}" deleted successfully.`;
-};
+    /**
+     * Updates an employee by its ID.
+     * @param {string} id - The ID of the employee.
+     * @param {Partial<Employee>} updatedEmployee - The updated employee details.
+     * @returns {Promise<Employee>} The updated employee.
+     * @throws {NotFoundError} If the employee does not exist.
+     * @throws {ServiceError} If the update fails.
+     */
+    async updateEmployee(id: string, updatedEmployee: Partial<Employee>): Promise<Employee> {
+        try {
+            const existingEmployee = await this.employeeRepository.getEmployeeById(id);
+            if (!existingEmployee) {
+                throw new NotFoundError(`Employee with ID "${id}" not found.`);
+            }
 
-/**
- * Retrieves employees from a specific department.
- * @param {string} department - Department name.
- * @returns {Promise<Employee[]>} Employees in the department.
- */
-export const getEmployeesByDepartment = async (department: string): Promise<Employee[]> => {
-    return employees.filter(employee => employee.department.toLowerCase() === department.toLowerCase());
+            await this.employeeRepository.updateEmployee(id, updatedEmployee);
+            return { id, ...existingEmployee, ...updatedEmployee };
+        } catch (error) {
+            throw new ServiceError(`Failed to update employee (${id}): ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+        }
+    }
+
+    /**
+     * Deletes an employee by its ID.
+     * @param {string} id - The ID of the employee.
+     * @returns {Promise<string>} A success message.
+     * @throws {NotFoundError} If the employee is not found.
+     * @throws {ServiceError} If deletion fails.
+     */
+    async deleteEmployee(id: string): Promise<string> {
+        try {
+            const existingEmployee = await this.employeeRepository.getEmployeeById(id);
+            if (!existingEmployee) {
+                throw new NotFoundError(`Employee with ID "${id}" not found.`);
+            }
+
+            await this.employeeRepository.deleteEmployee(id);
+            return `Employee with ID "${id}" deleted successfully.`;
+        } catch (error) {
+            if (error instanceof NotFoundError) {
+                throw error;
+            }
+            throw new ServiceError(`Failed to delete employee (${id}): ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+        }
+    }
+
+    /**
+     * Retrieves employees for a specific department within a branch.
+     * @param {string} departmentId - The department ID.
+     * @returns {Promise<Employee[]>} Employees in the specified department.
+     * @throws {ServiceError} If retrieval fails.
+     */
+    async getEmployeesByDepartment(departmentId: string): Promise<Employee[]> {
+        try {
+            return await this.employeeRepository.getEmployeesByDepartment(departmentId);
+        } catch (error) {
+            throw new ServiceError(`Failed to fetch employees for department (${departmentId}): ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+        }
+    }
 };

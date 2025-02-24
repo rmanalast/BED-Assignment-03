@@ -1,12 +1,10 @@
-/**
- * Controller for handling employee-related operations.
- * Provides endpoints for creating, retrieving, updating, and deleting employees,
- * as well as retrieving employees by department.
- */
 import { Request, Response, NextFunction } from "express";
-import * as employeeService from "../services/employeeService";
+import { EmployeeService } from "../services/employeeService";
 import { Employee } from "../interfaces/employee";
 import { NotFoundError, ValidationError } from "../utils/customErrors";
+
+// Instantiate EmployeeService
+const employeeService = new EmployeeService();
 
 /**
  * Creates a new employee.

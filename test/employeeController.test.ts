@@ -1,37 +1,41 @@
 import { Request, Response, NextFunction } from "express";
 import * as employeeController from "../src/api/v1/controllers/employeeController";
-import * as employeeService from "../src/api/v1/services/employeeService";
-
+import { EmployeeService } from "../src/api/v1/services/employeeService";
 import { Employee } from "../src/api/v1/interfaces/employee";
 
+// Mock the EmployeeService class
 jest.mock("../src/api/v1/services/employeeService");
 
 describe("Employee Controller", () => {
     let mockReq: Partial<Request>;
     let mockRes: Partial<Response>;
     let mockNext: NextFunction;
+    let employeeServiceMock: jest.Mocked<EmployeeService>;
 
     beforeEach(() => {
         jest.clearAllMocks();
         mockReq = { params: {}, body: {} };
         mockRes = { status: jest.fn().mockReturnThis(), json: jest.fn() };
         mockNext = jest.fn();
+
+        // Create an instance of the mocked EmployeeService
+        employeeServiceMock = new EmployeeService() as jest.Mocked<EmployeeService>;
     });
 
     // Sample employee data
     const sampleEmployee: Employee = {
-        id: "1", 
-        name: "Alice Johnson", 
-        position: "Branch Manager", 
-        department: "Management", 
-        email: "alice.johnson@pixell-river.com", 
-        phone: "604-555-0148", 
+        id: "1",
+        name: "Alice Johnson",
+        position: "Branch Manager",
+        department: "Management",
+        email: "alice.johnson@pixell-river.com",
+        phone: "604-555-0148",
         branchId: "1"
     };
 
     // Test Create Employee
     it("should create an employee", async () => {
-        (employeeService.createEmployee as jest.Mock).mockResolvedValue(sampleEmployee);
+        employeeServiceMock.createEmployee.mockResolvedValue(sampleEmployee);
         mockReq.body = sampleEmployee;
 
         await employeeController.createEmployee(mockReq as Request, mockRes as Response, mockNext);
@@ -45,7 +49,7 @@ describe("Employee Controller", () => {
 
     // Test Get All Employees
     it("should retrieve all employees", async () => {
-        (employeeService.getAllEmployees as jest.Mock).mockResolvedValue([sampleEmployee]);
+        employeeServiceMock.getAllEmployees.mockResolvedValue([sampleEmployee]);
 
         await employeeController.getAllEmployees(mockReq as Request, mockRes as Response, mockNext);
 
@@ -58,18 +62,10 @@ describe("Employee Controller", () => {
 
     // Test Update Employee
     it("should update an employee", async () => {
-        const updatedEmployee = { ...sampleEmployee, 
-            name: "Raven Manalastas", 
-            position: "Customer Service Supervisor",
-            department: "Customer Service"
-         };
-        (employeeService.updateEmployee as jest.Mock).mockResolvedValue(updatedEmployee);
+        const updatedEmployee = { ...sampleEmployee, name: "Raven Manalastas" };
+        employeeServiceMock.updateEmployee.mockResolvedValue(updatedEmployee);
         mockReq.params = { id: "1" };
-        mockReq.body = { 
-            name: "Raven Manalastas", 
-            position: "Customer Service Supervisor",
-            department: "Customer Service"
-        };
+        mockReq.body = { name: "Raven Manalastas" };
 
         await employeeController.updateEmployee(mockReq as Request, mockRes as Response, mockNext);
 
@@ -82,7 +78,7 @@ describe("Employee Controller", () => {
 
     // Test Delete Employee
     it("should delete an employee", async () => {
-        (employeeService.deleteEmployee as jest.Mock).mockResolvedValue(true);
+        employeeServiceMock.deleteEmployee.mockResolvedValue("Employee deleted successfully");
         mockReq.params = { id: "1" };
 
         await employeeController.deleteEmployee(mockReq as Request, mockRes as Response, mockNext);
@@ -94,7 +90,7 @@ describe("Employee Controller", () => {
     // Test Get Employees by Department
     it("should retrieve employees by department", async () => {
         const departmentEmployees = [sampleEmployee];
-        (employeeService.getEmployeesByDepartment as jest.Mock).mockResolvedValue(departmentEmployees);
+        employeeServiceMock.getEmployeesByDepartment.mockResolvedValue(departmentEmployees);
         mockReq.params = { department: "Management" };
 
         await employeeController.getEmployeesByDepartment(mockReq as Request, mockRes as Response, mockNext);

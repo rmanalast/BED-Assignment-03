@@ -1,12 +1,10 @@
-/**
- * Controller for handling branch-related operations.
- * Provides endpoints for creating, retrieving, updating, and deleting branches,
- * as well as fetching branches associated with a specific branch.
- */
 import { Request, Response, NextFunction } from "express";
-import * as branchService from "../services/branchService";
+import { BranchService } from "../services/branchService";  // Import the BranchService class
 import { Branch } from "../interfaces/branch";
 import { NotFoundError, ValidationError } from "../utils/customErrors";
+
+// Instantiate BranchService
+const branchService = new BranchService();
 
 /**
  * Creates a new branch.
@@ -21,10 +19,13 @@ export const createBranch = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        if (!req.body.name || !req.body.address || !req.body.phone) {
-            throw new ValidationError("Branch name, address, and phone are required.");
+        const { name, address, phone } = req.body;
+
+        // Validate required fields
+        if (!name || !address || !phone) {
+            return next(new ValidationError("Branch name, address, and phone are required."));
         }
-        
+
         const newBranch: Branch = req.body;
         const createdBranch = await branchService.createBranch(newBranch);
         res.status(201).json({ message: "Branch created", data: createdBranch });
@@ -67,11 +68,9 @@ export const getBranchById = async (
 ): Promise<void> => {
     try {
         const branch: Branch | null = await branchService.getBranchById(req.params.id);
-
         if (!branch) {
-            throw new NotFoundError("Branch not found.");
+            return next(new NotFoundError("Branch not found."));
         }
-
         res.status(200).json({ message: "Branch found", data: branch });
     } catch (error) {
         next(error);
@@ -91,12 +90,17 @@ export const updateBranch = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const updatedBranch: Branch | null = await branchService.updateBranch(req.params.id, req.body);
+        const { name, address, phone } = req.body;
 
-        if (!updatedBranch) {
-            throw new NotFoundError("Branch not found or update failed.");
+        // Validate required fields
+        if (!name || !address || !phone) {
+            return next(new ValidationError("Branch name, address, and phone are required."));
         }
 
+        const updatedBranch: Branch | null = await branchService.updateBranch(req.params.id, req.body);
+        if (!updatedBranch) {
+            return next(new NotFoundError("Branch not found or update failed."));
+        }
         res.status(200).json({ message: "Branch updated", data: updatedBranch });
     } catch (error) {
         next(error);
@@ -118,11 +122,10 @@ export const deleteBranch = async (
     try {
         const deleted = await branchService.deleteBranch(req.params.id);
         if (!deleted) {
-            throw new NotFoundError("Branch not found or could not be deleted.");
+            return next(new NotFoundError("Branch not found or could not be deleted."));
         }
-
         res.status(200).json({ message: "Branch deleted" });
-    } catch (error) { 
+    } catch (error) {
         next(error);
     }
 };
@@ -144,11 +147,11 @@ export const getEmployeesByBranch = async (
         const employees = await branchService.getEmployeesByBranch(branchId);
         
         if (!employees || employees.length === 0) {
-            throw new NotFoundError("No employees found for this branch.");
+            return next(new NotFoundError("No employees found for this branch."));
         }
 
         res.status(200).json({ message: "Employees retrieved", data: employees });
     } catch (error) {
         next(error);
     }
-}
+};
