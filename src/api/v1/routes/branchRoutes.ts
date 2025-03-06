@@ -1,10 +1,12 @@
 /**
  * Router for handling branch-related routes.
  * This defines endpoints for creating, retrieving, updating, and deleting branches,
- * as well as retrieving employees associated with a specific branch.
+ * as well as retrieving branches associated with a specific branch.
  */
 import express, { Router } from "express";
 import * as branchController from "../controllers/branchController";
+import validateRequest from "../middleware/validateRequest";
+import { branchSchema } from "../schemas/branchSchema";
 
 const branchRouter: Router = express.Router();
 
@@ -30,7 +32,9 @@ const branchRouter: Router = express.Router();
  *       400:
  *         description: Invalid input data
  */
-branchRouter.post("/", branchController.createBranch);
+
+// Create a new branch with validation
+branchRouter.post("/", validateRequest(branchSchema), branchController.createBranch);
 
 /**
  * Route to get all branches.
@@ -106,7 +110,9 @@ branchRouter.get("/:id", branchController.getBranchById);
  *       404:
  *         description: Branch not found
  */
-branchRouter.put("/:id", branchController.updateBranch);
+
+// Update an branch with validation
+branchRouter.put("/:id", validateRequest(branchSchema), branchController.updateBranch);
 
 /**
  * Route to delete a branch.

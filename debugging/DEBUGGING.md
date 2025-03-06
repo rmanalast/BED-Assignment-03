@@ -1,99 +1,102 @@
 # Debugging Analysis
 
-## Scenario 1: **Debugging Get All Employees Flow**
+## Scenario 1: **Validation Logic - Creating a Branch with Missing Fields**
 
-- **Breakpoint Location:** `employeeController.ts`, line 44 (`getAllEmployees` function)
-- **Objective:** Investigate how the system retrieves and returns all employee data when a `GET` request is made to fetch all employees.
+- **Breakpoint Location:** `branchService.ts`, line 18 (`createBranch` function)
+- **Objective:** Ensure that the validation logic correctly rejects incomplete or invalid branch data.
 
 ### Debugger Observations
 
 - **Variable States:**
-  - `employees`: Contains the list of all employees retrieved from the database.
+  - `branchData = { name: "Test Branch" }` (Missing `address` and `phone`)
+  - `validationResult.error = "Address is required"`
+  - `thrownError = ValidationError("Address is required")`
   
 - **Call Stack:**
-  - The controller calls `getAllEmployees` in `employeeService.ts` to fetch all employee data.
-  - After retrieving the employee data, the response is sent back to the client.
-  
+  - The controller calls `createBranch` in `branchService.ts` with incomplete branch data.
+  - The `validationResult.error` triggers validation failure due to missing required fields (e.g., `address` and `phone`).
+
 - **Behavior:**
-  - The debugger shows that `employees` contains the expected list of employee data before the response is sent.
-  - The API responds with a `200` status and the list of employees.
+  - The validation correctly identifies the missing `address` field and throws a `ValidationError`.
 
 ### Analysis:
 - **What did you learn from this scenario?**
-  - I confirmed that the retrieval of all employees works as expected, and the API correctly returns the employee data.
+  - The validation logic is working as expected, and the system correctly throws an error when required fields are missing.
 
 - **Did you observe any unexpected behavior?**
-  - No unexpected behavior was observed during the retrieval process.
+  - No, the behavior is as expected. However, additional logging could improve the debugging process.
 
 - **Areas for improvement or refactoring?**
-  - I could consider adding pagination or limiting the number of employees returned to improve performance, especially when the dataset grows large.
+  - Consider improving error messages to specify all missing fields at once, instead of stopping at the first missing field.
 
 - **How does this enhance your understanding of the overall project?**
-  - This scenario helped solidify how employee data is fetched and returned in the system, and how controllers handle API responses.
+  - This scenario reinforced how validation works in the system and the importance of handling input validation before performing database operations.
 
 ---
 
-## Scenario 2: **Debugging Employee Deletion Process**
+## Scenario 2: **Updating a Branch - Ensuring Partial Updates Work Correctly**
 
-- **Breakpoint Location:** `employeeController.ts`, line 120 (`deleteEmployee` function)
-- **Objective:** Debug the employee deletion flow to see how the `DELETE` request is handled, and observe the result when attempting to delete a non-existing employee.
+- **Breakpoint Location:** `branchService.ts`, line 60 (`updateBranch` function)
+- **Objective:** Ensure that partial updates to a branch work as expected, and only the fields provided are updated.
 
 ### Debugger Observations
 
 - **Variable States:**
-  - `deleted`: Boolean indicating whether the employee was successfully deleted.
+  - `branchData = { id: "1", name: "Updated Branch", address: "New Address" }` (Partial data)
+  - `existingBranch = { id: "1", name: "Old Branch", address: "Old Address", phone: "123-456-7890" }` (Existing branch data)
   
 - **Call Stack:**
-  - The controller calls `deleteEmployee` in `employeeService.ts` with the employee ID to remove the employee.
+  - The controller calls `updateBranch` with the partial data (`name` and `address`), and Firestore's `updateDocument` is executed.
+  - The `updateDocument` function updates only the `name` and `address` fields, leaving other fields unchanged.
   
 - **Behavior:**
-  - The debugger shows that if the employee ID is valid, the `deleted` variable is set to `true`.
-  - If the employee does not exist, `deleted` is `false`, and a `404` response is returned.
-  
+  - The debugger shows that only the `name` and `address` fields are updated in Firestore, while the `phone` remains unchanged.
+  - The response contains the updated `branchData` with the provided fields (`name` and `address`).
+
 ### Analysis:
 - **What did you learn from this scenario?**
-  - I confirmed that the deletion process works as expected, and the API correctly handles cases where the employee does not exist.
+  - Partial updates are working as expected, where only the fields provided in the request are updated in Firestore, and other fields are left unchanged.
 
 - **Did you observe any unexpected behavior?**
-  - No, the behavior was expected. However, it's important to handle cases where no employee is found in a user-friendly manner.
+  - No unexpected behavior was observed, the update correctly only affects the provided fields.
 
 - **Areas for improvement or refactoring?**
-  - Adding more error handling around potential database issues could improve the robustness of the system.
-
+  - Consider validating the presence of at least one field to update. This ensures that partial updates are meaningful and not empty.
+  
 - **How does this enhance your understanding of the overall project?**
-  - This scenario helped me understand how to manage deletion in RESTful APIs and handle cases where the item to be deleted does not exist.
+  - This scenario confirmed that partial updates function as intended, and understanding how Firestore handles update operations at the field level helps in controlling what data is updated.
+
 ---
 
-## Scenario 3: **Debugging Get All Branches Test**
+## Scenario 3: **Handling NotFoundError for Employee Retrieval**
 
-- **Breakpoint Location:** `branchController.test.ts`, line 58 (test for `getAllBranches` function)
-- **Objective:** Investigate how the unit test for the `getAllBranches` function works and observe the behavior when retrieving all branches.
+- **Breakpoint Location:** `employeeService.ts`, line 51 (`getEmployeeById` function)
+- **Objective:** Ensure that the system handles the `NotFoundError` correctly when an employee is not found by their ID.
 
 ### Debugger Observations
 
 - **Variable States:**
-  - `mockReq`: The mock request object simulating the incoming request for retrieving branches.
-  - `mockRes`: The mock response object to verify the correct response is returned from the controller.
-  - `sampleBranch`: A sample branch used to simulate the data retrieved by the service.
+  - `id = "123"` (The employee ID being queried)
+  - `snapshot.empty = true` (No employee found in the database for the given ID)
+  - `thrownError = NotFoundError("Employee with ID '123' not found.")`
   
 - **Call Stack:**
-  - The test calls the `getAllBranches` function in `branchController.ts`, which invokes the `getAllBranches` service method in `branchService.ts` to fetch all branches.
-  - The test mocks the `getAllBranches` service to return the `sampleBranch` data.
-  - The controller then sends the response back to the client using `mockRes`.
-
+  - The controller calls `getEmployeeById` with the ID `"123"`.
+  - The `getDocumentsByFieldValue` function queries the database for an employee with the given ID.
+  - Since the employee doesn't exist, a `NotFoundError` is thrown with the appropriate error message.
+  
 - **Behavior:**
-  - The debugger shows that the `mockRes.status` function is called with `200`, confirming that the response is successful.
-  - It also verifies that `mockRes.json` is called with the expected data (`sampleBranch`) and a success message.
+  - The `NotFoundError` is correctly thrown, and the error is handled within the `catch` block, where it is rethrown if it's an instance of `NotFoundError`. Other errors are wrapped in a `ServiceError`.
 
 ### Analysis:
 - **What did you learn from this scenario?**
-  - I confirmed that the unit test for retrieving all branches works as expected. The test correctly mocks the service and verifies that the controller responds with a `200` status and the correct branch data.
+  - The system correctly handles missing employee data by throwing and handling the `NotFoundError`, ensuring that the proper error is returned when the employee is not found.
 
 - **Did you observe any unexpected behavior?**
-  - No, the behavior was expected. The mock service call returns the sample data, and the controller responds accordingly.
+  - No, the behavior is as expected. The error is handled appropriately.
 
 - **Areas for improvement or refactoring?**
-  - The test could be extended to handle cases where no branches are found, ensuring the controller returns an appropriate message or status code in such cases.
+  - Consider improving the error handling to log more information, such as the employee ID, to aid in debugging issues when the error occurs.
 
 - **How does this enhance your understanding of the overall project?**
-  - This scenario helped me understand how mocking works in unit tests, specifically in ensuring that service functions are properly simulated, and how to verify that the controller responds as expected.
+  - This scenario reinforced the importance of custom error handling and the ability to handle specific error types like `NotFoundError` to improve clarity and response behavior in the system.

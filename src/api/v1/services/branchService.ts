@@ -1,74 +1,98 @@
-/**
- * Service functions for managing branches and their related operations.
- * Includes functions for creating, retrieving, updating, and deleting branches,
- * as well as retrieving employees associated with a specific branch.
- */
 import { Branch } from "../interfaces/branch";
-import { sampleBranches } from "../sample data/branchData";
 import { Employee } from "../interfaces/employee";
-import { sampleEmployees } from "../sample data/employeeData";
+import {
+    createDocument,
+    getDocuments,
+    getDocumentsByFieldValue,
+    updateDocument,
+    deleteDocument
+} from "../utils/firestoreUtils";
 
-const branches: Branch[] = [...sampleBranches];
-const employees: Employee[] = [...sampleEmployees];
+const COLLECTION = "branches";
 
 /**
- * Creates a new branch and adds it to the branches list.
- * @param {Partial<Branch>} branch - The branch details (name, address, phone).
- * @returns {Promise<Branch>} The newly created branch.
+ * @description Create a new branch.
+ * @param {Partial<Branch>} branch - The branch data.
+ * @returns {Promise<Branch>}
  */
 export const createBranch = async (branch: Partial<Branch>): Promise<Branch> => {
-    const newBranch: Branch = { id: Date.now().toString(), ...branch } as Branch;
-    branches.push(newBranch);
-    return newBranch;
+    const id = await createDocument(COLLECTION, branch);
+    return { id, ...branch } as Branch;
 };
 
 /**
- * Retrieves all branches.
- * @returns {Promise<Branch[]>} An array of all branches.
+ * @description Get all branches.
+ * @returns {Promise<Branch[]>}
  */
 export const getAllBranches = async (): Promise<Branch[]> => {
-    return branches;
+    const snapshot = await getDocuments(COLLECTION);
+
+    return snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return { id: doc.id, ...data } as Branch;
+    });
 };
 
 /**
- * Retrieves a branch by its ID.
+ * @description Get a branch by ID.
  * @param {string} id - The ID of the branch.
- * @returns {Promise<Branch | null>} The found branch or null if not found.
+ * @returns {Promise<Branch>}
+ * @throws {Error} If the branch with the given ID is not found.
  */
-export const getBranchById = async (id: string): Promise<Branch | null> => {
-    return branches.find(branch => branch.id === id) || null;
+export const getBranchById = async (id: string): Promise<Branch> => {
+    const snapshot = await getDocumentsByFieldValue(COLLECTION, "id", id);
+    if (snapshot.empty) {
+        throw new Error(`Branch with ID "${id}" not found.`);
+    }
+
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+    return { id: doc.id, ...data } as Branch;
 };
 
 /**
- * Updates a branch by its ID.
- * @param {string} id - The ID of the branch.
- * @param {Partial<Branch>} updatedBranch - The updated branch details.
- * @returns {Promise<Branch | null>} The updated branch or null if not found.
+ * @description Update an existing branch.
+ * @param {string} id - The ID of the branch to update.
+ * @param {Partial<Branch>} branch - The updated branch data.
+ * @returns {Promise<Branch>}
+ * @throws {Error} If the branch with the given ID is not found.
  */
-export const updateBranch = async (id: string, updatedBranch: Partial<Branch>): Promise<Branch | null> => {
-    const index: number = branches.findIndex(branch => branch.id === id);
-    if (index === -1) return null;
-    branches[index] = { ...branches[index], ...updatedBranch };
-    return branches[index];
+export const updateBranch = async (
+    id: string,
+    branch: Partial<Branch>
+): Promise<Branch> => {
+    await updateDocument(COLLECTION, id, branch);
+    return { id, ...branch } as Branch;
 };
 
 /**
- * Deletes a branch by its ID.
- * @param {string} id - The ID of the branch.
- * @returns {Promise<boolean>} True if deletion was successful, false otherwise.
+ * @description Delete a branch.
+ * @param {string} id - The ID of the branch to delete.
+ * @returns {Promise<boolean>} Returns true if the branch is deleted, false otherwise.
+ * @throws {Error} If the branch with the given ID is not found.
  */
 export const deleteBranch = async (id: string): Promise<boolean> => {
-    const index: number = branches.findIndex(branch => branch.id === id);
-    if (index === -1) return false;
-    branches.splice(index, 1);
-    return true;
+    const snapshot = await getDocumentsByFieldValue(COLLECTION, "id", id);
+
+    if (snapshot.empty) {
+        throw new Error(`Branch with ID "${id}" not found.`);
+    }
+
+    // Assuming the branch exists and you can delete it
+    await deleteDocument(COLLECTION, id);
+    return true; // Return true if the deletion was successful
 };
 
 /**
- * Retrieves all employees associated with a given branch.
- * @param {string} branchId - The ID of the branch.
- * @returns {Promise<Employee[]>} An array of employees belonging to the specified branch.
+ * @description Get employees for a specific branch.
+ * @param {string} branchId - The branch ID.
+ * @returns {Promise<Employee[]>}
  */
 export const getEmployeesByBranch = async (branchId: string): Promise<Employee[]> => {
-    return employees.filter(employee => employee.branchId === branchId);
+    const snapshot = await getDocumentsByFieldValue(COLLECTION, "branchId", branchId);
+
+    return snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return { id: doc.id, ...data } as Employee;
+    });
 };

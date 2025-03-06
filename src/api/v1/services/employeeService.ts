@@ -1,77 +1,121 @@
-/**
- * Service functions for managing employees and their related operations.
- * Includes functions for creating, retrieving, updating, and deleting employees,
- * as well as retrieving employees by department.
- */
 import { Employee } from "../interfaces/employee";
-import { sampleEmployees } from "../sample data/employeeData";
-import { Branch } from "../interfaces/branch";
-import { sampleBranches } from "../sample data/branchData";
+import {
+    createDocument,
+    getDocuments,
+    getDocumentsByFieldValue,
+    updateDocument,
+    deleteDocument
+} from "../utils/firestoreUtils";
+import { NotFoundError, ServiceError, ValidationError } from "../utils/customErrors";
 
-const branches: Branch[] = [...sampleBranches];
-const employees: Employee[] = [...sampleEmployees];
+const COLLECTION = "employees";
 
 /**
- * Retrieves all employees.
- * @returns {Promise<Employee[]>} An array of all employees.
+ * @description Create a new employee.
+ * @param {Partial<Employee>} employee - The employee data.
+ * @returns {Promise<Employee>}
+ * @throws {ValidationError} If required fields are missing.
+ */
+export const createEmployee = async (employee: Partial<Employee>): Promise<Employee> => {
+    if (!employee.name || !employee.position || !employee.branchId || !employee.email || !employee.phone) {
+        throw new ValidationError("All fields (name, position, email, phone, branchId) are required.");
+    }
+
+    try {
+        const id = await createDocument(COLLECTION, employee);
+        return { id, ...employee } as Employee;
+    } catch (error) {
+        throw new ServiceError(`Failed to create employee: ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+    }
+};
+
+/**
+ * @description Get all employees.
+ * @returns {Promise<Employee[]>}
  */
 export const getAllEmployees = async (): Promise<Employee[]> => {
-    return employees;
+    try {
+        const snapshot = await getDocuments(COLLECTION);
+        return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Employee[];
+    } catch (error) {
+        throw new ServiceError(`Failed to fetch employees: ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+    }
 };
 
 /**
- * Retrieves an employee by their ID.
+ * @description Get an employee by ID.
  * @param {string} id - The ID of the employee.
- * @returns {Employee | null} The found employee or null if not found.
+ * @returns {Promise<Employee>}
+ * @throws {NotFoundError} If the employee is not found.
  */
-export const getEmployeeById = (id: string): Employee | null => {
-    return employees.find(employee => employee.id === id) || null;
+export const getEmployeeById = async (id: string): Promise<Employee> => {
+    try {
+        const snapshot = await getDocumentsByFieldValue(COLLECTION, "id", id);
+        if (snapshot.empty) {
+            throw new NotFoundError(`Employee with ID "${id}" not found.`);
+        }
+
+        const doc = snapshot.docs[0];
+        return { id: doc.id, ...doc.data() } as Employee;
+    } catch (error) {
+        if (error instanceof NotFoundError) {
+            throw error;
+        }
+        throw new ServiceError(`Failed to fetch employee (${id}): ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+    }
 };
 
 /**
- * Creates a new employee and adds them to the employees list.
- * @param {Omit<Employee, 'id'>} employee - The employee details without an ID.
- * @returns {Promise<Employee>} The newly created employee.
- */
-export const createEmployee = async (employee: Omit<Employee, 'id'>): Promise<Employee> => {
-    const newEmployee: Employee = { id: Date.now().toString(), ...employee };
-    employees.push(newEmployee);
-    return newEmployee;
-};
-
-/**
- * Updates an employee by their ID.
+ * @description Update an existing employee.
  * @param {string} id - The ID of the employee.
- * @param {Partial<Employee>} updatedEmployee - The updated employee details.
- * @returns {Promise<Employee | null>} The updated employee or null if not found.
+ * @param {Partial<Employee>} employee - The updated employee data.
+ * @returns {Promise<Employee>}
+ * @throws {NotFoundError} If the employee is not found.
  */
-export const updateEmployee = async (
-    id: string,
-    updatedEmployee: Partial<Employee>
-): Promise<Employee | null> => {
-    const index = employees.findIndex(employee => employee.id === id);
-    if (index === -1) return null;
-    employees[index] = { ...employees[index], ...updatedEmployee };
-    return employees[index];
+export const updateEmployee = async (id: string, employee: Partial<Employee>): Promise<Employee> => {
+    try {
+        const snapshot = await getDocumentsByFieldValue(COLLECTION, "id", id);
+        if (snapshot.empty) {
+            throw new NotFoundError(`Employee with ID "${id}" not found.`);
+        }
+
+        await updateDocument(COLLECTION, id, employee);
+        return { id, ...employee } as Employee;
+    } catch (error) {
+        throw new ServiceError(`Failed to update employee (${id}): ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+    }
 };
 
 /**
- * Deletes an employee by their ID.
+ * @description Delete an employee.
  * @param {string} id - The ID of the employee.
- * @returns {Promise<boolean>} True if deleted, false if not found.
+ * @returns {Promise<boolean>}
+ * @throws {NotFoundError} If the employee is not found.
  */
 export const deleteEmployee = async (id: string): Promise<boolean> => {
-    const index = employees.findIndex(employee => employee.id === id);
-    if (index === -1) return false;
-    employees.splice(index, 1);
-    return true;
+    try {
+        const snapshot = await getDocumentsByFieldValue(COLLECTION, "id", id);
+        if (snapshot.empty) {
+            throw new NotFoundError(`Employee with ID "${id}" not found.`);
+        }
+
+        await deleteDocument(COLLECTION, id);
+        return true;
+    } catch (error) {
+        throw new ServiceError(`Failed to delete employee (${id}): ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+    }
 };
 
 /**
- * Retrieves all employees in a specific department.
- * @param {string} department - The department name.
- * @returns {Promise<Employee[]>} An array of employees belonging to the specified department.
+ * @description Get employees by department.
+ * @param {string} departmentId - The department ID.
+ * @returns {Promise<Employee[]>}
  */
-export const getEmployeesByDepartment = async (department: string): Promise<Employee[]> => {
-    return employees.filter(employee => employee.department === department);
+export const getEmployeesByDepartment = async (departmentId: string): Promise<Employee[]> => {
+    try {
+        const snapshot = await getDocumentsByFieldValue(COLLECTION, "department", departmentId);
+        return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Employee[];
+    } catch (error) {
+        throw new ServiceError(`Failed to fetch employees for department (${departmentId}): ${error instanceof Error ? error.message : "Unknown error occurred."}`);
+    }
 };

@@ -1,62 +1,45 @@
 /**
- * Controller for handling employee-related operations.
- * Provides endpoints for creating, retrieving, updating, and deleting employees,
- * as well as retrieving employees by department.
+ * Employee Controller (employeeController.ts)
+ *
+ * This file defines functions (controllers) for handling incoming requests related to employees.
+ * These functions interact with the employee service (employeeService.ts) to perform the actual
+ * logic for CRUD operations on employees.
  */
+
 import { Request, Response, NextFunction } from "express";
 import * as employeeService from "../services/employeeService";
 import { Employee } from "../interfaces/employee";
+import { successResponse } from "../models/responseModel";
+import { HTTP_STATUS } from "../../../constants/httpConstants";
+import { NotFoundError, ValidationError } from "../utils/customErrors";
 
 /**
- * Creates a new employee.
- * @route POST /employees
- * @param req - Express request object, expects employee details in req.body.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @description Get all employees.
+ * @route GET /employees
+ * @returns {Promise<void>}
  */
-export const createEmployee = async (
-    req: Request, 
+export const getAllEmployees = async (
+    req: Request,
     res: Response,
     next: NextFunction
 ): Promise<void> => {
     try {
-        const newEmployee: Employee = req.body;
-        const createdEmployee = await employeeService.createEmployee(newEmployee);
-        res.status(201).json({ message: "Employee created", data: createdEmployee});
+        const employees: Employee[] = await employeeService.getAllEmployees();
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(employees, "Employees Retrieved")
+        );
     } catch (error) {
         next(error);
     }
 };
 
 /**
- * Get all employees.
- * @route GET /employees
- * @param req - Express request object.
- * @param res - Express response object.
- * @param next - Express next middleware function.
- */
-export const getAllEmployees = async (
-    req: Request, 
-    res: Response,
-    next: NextFunction
-): Promise<void> => {
-    try {
-        const employees: Employee[] = await employeeService.getAllEmployees();
-        res.status(200).json({ message: "Employees retrieved", data: employees });
-    } catch (error) {
-        next (error);
-    }
-};
-
-/**
- * Get an employee by ID.
+ * @description Get an employee by ID.
  * @route GET /employees/:id
- * @param req - Express request object, expects employee ID in req.params.id.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @returns {Promise<void>}
  */
 export const getEmployeeById = async (
-    req: Request, 
+    req: Request,
     res: Response,
     next: NextFunction
 ): Promise<void> => {
@@ -64,81 +47,121 @@ export const getEmployeeById = async (
         const employee: Employee | null = await employeeService.getEmployeeById(req.params.id);
 
         if (!employee) {
-            res.status(404).json({ message: "Employee not found" });
-            return;
+            return next(new NotFoundError("Employee not found."));
         }
 
-        res.status(200).json({ message: "Employee found", data: employee });
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(employee, "Employee Retrieved")
+        );
     } catch (error) {
         next(error);
     }
 };
 
 /**
- * Update an employee.
- * @route PUT /employees/:id
- * @param req - Express request object, expects employee ID in req.params.id and updated details in req.body.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @description Create a new employee.
+ * @route POST /employees
+ * @returns {Promise<void>}
  */
-export const updateEmployee = async (
-    req: Request, 
-    res: Response, 
+export const createEmployee = async (
+    req: Request,
+    res: Response,
     next: NextFunction
 ): Promise<void> => {
     try {
+        const { name, position, department } = req.body;
+
+        if (!name || !position || !department) {
+            return next(new ValidationError("Employee name, position, and department are required."));
+        }
+
+        const newEmployee: Employee = await employeeService.createEmployee(req.body);
+
+        res.status(HTTP_STATUS.CREATED).json(
+            successResponse(newEmployee, "Employee Created")
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * @description Update an existing employee.
+ * @route PUT /employees/:id
+ * @returns {Promise<void>}
+ */
+export const updateEmployee = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const { name, position, department, email, phone } = req.body;
+
+        if (!name || !position || !department || !email || !phone) {
+            return next(new ValidationError("Employee name, position, and department are required."));
+        }
+
         const updatedEmployee: Employee | null = await employeeService.updateEmployee(
             req.params.id,
             req.body
         );
 
         if (!updatedEmployee) {
-            res.status(404).json({ message: "Employee not found or update failed" });
-            return;
+            return next(new NotFoundError("Employee not found or update failed."));
         }
 
-        res.status(200).json({ message: "Employee updated", data: updatedEmployee });
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(updatedEmployee, "Employee Updated")
+        );
     } catch (error) {
         next(error);
     }
 };
 
 /**
- * Delete an employee.
+ * @description Delete an employee.
  * @route DELETE /employees/:id
- * @param req - Express request object, expects employee ID in req.params.id.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @returns {Promise<void>}
  */
 export const deleteEmployee = async (
-    req: Request, 
+    req: Request,
     res: Response,
     next: NextFunction
 ): Promise<void> => {
     try {
-        await employeeService.deleteEmployee(req.params.id);
-        res.status(200).json({ message: "Employee deleted"});
+        const { id } = req.params;
+        await employeeService.deleteEmployee(id);
+
+        res.status(HTTP_STATUS.OK).json({
+            message: "Employee Deleted",
+            status: "success",
+        });
     } catch (error) {
-        next(error)
+        next(error);
     }
 };
 
 /**
- * Get employees by department.
+ * @description Get employees by department.
  * @route GET /employees/department/:department
- * @param req - Express request object, expects department name in req.params.department.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @returns {Promise<void>}
  */
 export const getEmployeesByDepartment = async (
-    req: Request, 
+    req: Request,
     res: Response,
     next: NextFunction
 ): Promise<void> => {
     try {
-        const { department } = req.params;
-        const employees = await employeeService.getEmployeesByDepartment(department);
-        res.status(200).json({ message: "Employees retrieved", data: employees });
+        const employees: Employee[] = await employeeService.getEmployeesByDepartment(req.params.department);
+
+        if (!employees || employees.length === 0) {
+            return next(new NotFoundError("No employees found for this department."));
+        }
+
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(employees, "Employees Retrieved")
+        );
     } catch (error) {
         next(error);
     }

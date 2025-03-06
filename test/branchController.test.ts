@@ -2,10 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import * as branchController from "../src/api/v1/controllers/branchController";
 import * as branchService from "../src/api/v1/services/branchService";
 
-import { Branch } from "../src/api/v1/interfaces/branch";
-import { Employee } from "../src/api/v1/interfaces/employee";
-
-jest.mock("../src/api/v1/services/branchService");
+jest.mock("../src/api/v1/services/branchService", () => ({
+    createBranch: jest.fn(),
+    getAllBranches: jest.fn(),
+    getBranchById: jest.fn(),
+    updateBranch: jest.fn(),
+    deleteBranch: jest.fn(),
+    getEmployeesByBranch: jest.fn(),
+}));
 
 describe("Branch Controller", () => {
     let mockReq: Partial<Request>;
@@ -19,15 +23,14 @@ describe("Branch Controller", () => {
         mockNext = jest.fn();
     });
 
-    // Sample branch and employee data
-    const sampleBranch: Branch = {
+    const sampleBranch = {
         id: "1",
         name: "Vancouver Branch",
         address: "1300 Burrard St, Vancouver, BC, V6Z 2C7",
         phone: "604-456-0022",
     };
 
-    const sampleEmployee: Employee = {
+    const sampleEmployee = {
         id: "1",
         name: "Alice Johnson",
         position: "Branch Manager",
@@ -46,8 +49,9 @@ describe("Branch Controller", () => {
 
         expect(mockRes.status).toHaveBeenCalledWith(201);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Branch created",
+            message: "Branch Created",
             data: sampleBranch,
+            status: "success",
         });
     });
 
@@ -59,8 +63,9 @@ describe("Branch Controller", () => {
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Branches retrieved",
+            message: "Branches Retrieved",
             data: [sampleBranch],
+            status: "success",
         });
     });
 
@@ -73,8 +78,9 @@ describe("Branch Controller", () => {
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Branch found",
+            message: "Branch Retrieved",
             data: sampleBranch,
+            status: "success",
         });
     });
 
@@ -89,8 +95,9 @@ describe("Branch Controller", () => {
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Branch updated",
+            message: "Branch Updated",
             data: updatedBranch,
+            status: "success", 
         });
     });
 
@@ -102,21 +109,25 @@ describe("Branch Controller", () => {
         await branchController.deleteBranch(mockReq as Request, mockRes as Response, mockNext);
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
-        expect(mockRes.json).toHaveBeenCalledWith({ message: "Branch deleted" });
+        expect(mockRes.json).toHaveBeenCalledWith({
+            message: "Branch Deleted",
+            status: "success",
+        });
     });
 
     // Test Get All Employees for a Branch
     it("should retrieve all employees for a given branch", async () => {
-        const sampleEmployees: Employee[] = [sampleEmployee];
+        const sampleEmployees = [sampleEmployee];
         (branchService.getEmployeesByBranch as jest.Mock).mockResolvedValue(sampleEmployees);
-        mockReq.params = { branchId: "1" }; // FIXED PARAMETER NAME
+        mockReq.params = { branchId: "1" };
 
         await branchController.getEmployeesByBranch(mockReq as Request, mockRes as Response, mockNext);
 
         expect(mockRes.status).toHaveBeenCalledWith(200);
         expect(mockRes.json).toHaveBeenCalledWith({
-            message: "Employees retrieved",
+            message: "Employees Retrieved",
             data: sampleEmployees,
+            status: "success",
         });
     });
 });

@@ -1,124 +1,166 @@
 /**
  * Router for handling employee-related routes.
  * This defines endpoints for creating, retrieving, updating, and deleting employees,
- * as well as retrieving employees associated with a specific employee.
+ * as well as retrieving employees associated with a specific department.
  */
 import express, { Router } from "express";
 import * as employeeController from "../controllers/employeeController";
+import validateRequest from "../middleware/validateRequest";
+import { employeeSchema } from "../schemas/employeeSchema";
 
 const employeeRouter: Router = express.Router();
 
 /**
- * Create a new employee.
+ * Route to create a new employee.
  * @route POST /employees
  * @swagger
- * summary: Create a new employee.
- * requestBody:
- *   required: true
- *   content:
- *     application/json:
- *       schema:
- *         $ref: '#/components/schemas/Employee'
- * responses:
- *   201:
- *     description: Employee created successfully.
- *   400:
- *     description: Invalid request data.
+ * /employees:
+ *   post:
+ *     summary: Create a new employee
+ *     description: Adds a new employee to the system.
+ *     tags:
+ *       - Employees
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Employee'
+ *     responses:
+ *       201:
+ *         description: Employee created successfully
+ *       400:
+ *         description: Invalid input data
  */
-employeeRouter.post("/", employeeController.createEmployee);
+
+// Create a new employee with validation
+employeeRouter.post("/", validateRequest(employeeSchema), employeeController.createEmployee);
 
 /**
- * Get all employees.
+ * Route to get all employees.
  * @route GET /employees
  * @swagger
- * summary: Retrieve all employees.
- * responses:
- *   200:
- *     description: List of employees retrieved successfully.
+ * /employees:
+ *   get:
+ *     summary: Retrieve all employees
+ *     description: Fetches a list of all employees.
+ *     tags:
+ *       - Employees
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved employees
+ *       500:
+ *         description: Server error
  */
 employeeRouter.get("/", employeeController.getAllEmployees);
 
 /**
- * Get an employee by ID.
- * @route GET /employees/{id}
+ * Route to get an employee by ID.
+ * @route GET /employees/:id
  * @swagger
- * summary: Retrieve an employee by ID.
- * parameters:
- *   - in: path
- *     name: id
- *     required: true
- *     schema:
- *       type: string
- * responses:
- *   200:
- *     description: Employee retrieved successfully.
- *   404:
- *     description: Employee not found.
+ * /employees/{id}:
+ *   get:
+ *     summary: Retrieve a specific employee
+ *     description: Fetches details of an employee using their ID.
+ *     tags:
+ *       - Employees
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The employee ID
+ *     responses:
+ *       200:
+ *         description: Employee retrieved successfully
+ *       404:
+ *         description: Employee not found
  */
 employeeRouter.get("/:id", employeeController.getEmployeeById);
 
 /**
- * Update an employee.
- * @route PUT /employees/{id}
+ * Route to update an employee.
+ * @route PUT /employees/:id
  * @swagger
- * summary: Update an existing employee.
- * parameters:
- *   - in: path
- *     name: id
- *     required: true
- *     schema:
- *       type: string
- * requestBody:
- *   required: true
- *   content:
- *     application/json:
- *       schema:
- *         $ref: '#/components/schemas/Employee'
- * responses:
- *   200:
- *     description: Employee updated successfully.
- *   400:
- *     description: Invalid request data.
- *   404:
- *     description: Employee not found.
+ * /employees/{id}:
+ *   put:
+ *     summary: Update an employee
+ *     description: Modifies the details of an existing employee.
+ *     tags:
+ *       - Employees
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The employee ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Employee'
+ *     responses:
+ *       200:
+ *         description: Employee updated successfully
+ *       400:
+ *         description: Invalid input data
+ *       404:
+ *         description: Employee not found
  */
-employeeRouter.put("/:id", employeeController.updateEmployee);
+
+// Update an employee with validation
+employeeRouter.put("/:id", validateRequest(employeeSchema), employeeController.updateEmployee);
 
 /**
- * Delete an employee.
- * @route DELETE /employees/{id}
+ * Route to delete an employee.
+ * @route DELETE /employees/:id
  * @swagger
- * summary: Delete an employee by ID.
- * parameters:
- *   - in: path
- *     name: id
- *     required: true
- *     schema:
- *       type: string
- * responses:
- *   200:
- *     description: Employee deleted successfully.
- *   404:
- *     description: Employee not found.
+ * /employees/{id}:
+ *   delete:
+ *     summary: Delete an employee
+ *     description: Removes an employee from the system.
+ *     tags:
+ *       - Employees
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The employee ID
+ *     responses:
+ *       200:
+ *         description: Employee deleted successfully
+ *       404:
+ *         description: Employee not found
  */
 employeeRouter.delete("/:id", employeeController.deleteEmployee);
 
 /**
- * Get employees by department.
+ * Route to get employees by department.
  * @route GET /employees/department/{department}
  * @swagger
- * summary: Retrieve employees by department.
- * parameters:
- *   - in: path
- *     name: department
- *     required: true
- *     schema:
- *       type: string
- * responses:
- *   200:
- *     description: Employees retrieved successfully.
- *   404:
- *     description: No employees found in the specified department.
+ * /employees/department/{department}:
+ *   get:
+ *     summary: Retrieve employees by department
+ *     description: Fetches a list of employees assigned to a specific department.
+ *     tags:
+ *       - Employees
+ *     parameters:
+ *       - in: path
+ *         name: department
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The department name
+ *     responses:
+ *       200:
+ *         description: Employees retrieved successfully
+ *       404:
+ *         description: Department not found or no employees assigned
  */
 employeeRouter.get("/department/:department", employeeController.getEmployeesByDepartment);
 

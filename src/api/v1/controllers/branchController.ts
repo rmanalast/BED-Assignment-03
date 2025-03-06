@@ -1,89 +1,96 @@
 /**
- * Controller for handling branch-related operations.
- * Provides endpoints for creating, retrieving, updating, and deleting branches,
- * as well as fetching employees associated with a specific branch.
+ * Branch Controller (branchController.ts)
+ *
+ * This file defines functions (controllers) for handling incoming requests related to branches.
+ * These functions interact with the branch service (branchService.ts) to perform the actual
+ * logic for CRUD operations on branches.
  */
+
 import { Request, Response, NextFunction } from "express";
 import * as branchService from "../services/branchService";
 import { Branch } from "../interfaces/branch";
+import { Employee } from "../interfaces/employee";
+import { successResponse } from "../models/responseModel";
+import { HTTP_STATUS } from "../../../constants/httpConstants";
+import { NotFoundError } from "../utils/customErrors";
 
 /**
- * Creates a new branch.
- * @route POST /branches
- * @param req - Express request object, expects branch details in req.body.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @description Get all branches.
+ * @route GET /branches
+ * @returns {Promise<void>}
  */
-export const createBranch = async (
-    req: Request, 
+export const getAllBranches = async (
+    req: Request,
     res: Response,
     next: NextFunction
 ): Promise<void> => {
     try {
-        const newBranch: Branch = req.body;
-        const createdBranch = await branchService.createBranch(newBranch);
-        res.status(201).json({ message: "Branch created", data: createdBranch });
+        const branches: Branch[] = await branchService.getAllBranches();
+
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(branches, "Branches Retrieved")
+        );
     } catch (error) {
         next(error);
     }
 };
 
 /**
- * Retrieves all branches.
- * @route GET /branches
- * @param req - Express request object.
- * @param res - Express response object.
- * @param next - Express next middleware function.
- */
-export const getAllBranches = async (
-    req: Request, 
-    res: Response, 
-    next: NextFunction
-): Promise<void> => {
-    try {
-        const branches: Branch[] = await branchService.getAllBranches();
-        res.status(200).json({ message: "Branches retrieved", data: branches });
-    } catch (error) {
-        next (error);
-    }
-};
-
-/**
- * Retrieves a branch by its ID.
+ * @description Get a branch by ID.
  * @route GET /branches/:id
- * @param req - Express request object, expects branch ID in req.params.id.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @returns {Promise<void>}
  */
 export const getBranchById = async (
-    req: Request, 
-    res: Response, 
+    req: Request,
+    res: Response,
     next: NextFunction
 ): Promise<void> => {
     try {
-        const branch: Branch | null = await branchService.getBranchById(req.params.id);
+        const branch: Branch | null = await branchService.getBranchById(
+            req.params.id
+        );
 
         if (!branch) {
-            res.status(404).json({ message: "Branch not found" });
-            return;
+            return next(new NotFoundError("Branch not found."));
         }
 
-        res.status(200).json({ message: "Branch found", data: branch });
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(branch, "Branch Retrieved")
+        );
     } catch (error) {
         next(error);
     }
 };
 
 /**
- * Updates an existing branch by ID.
+ * @description Create a new branch.
+ * @route POST /branches
+ * @returns {Promise<void>}
+ */
+export const createBranch = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const newBranch: Branch = await branchService.createBranch(req.body);
+
+        res.status(HTTP_STATUS.CREATED).json(
+            successResponse(newBranch, "Branch Created")
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * @description Update an existing branch.
  * @route PUT /branches/:id
- * @param req - Express request object, expects branch ID in req.params.id and updated details in req.body.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @returns {Promise<void>}
  */
 export const updateBranch = async (
-    req: Request, 
-    res: Response, 
+    req: Request,
+    res: Response,
     next: NextFunction
 ): Promise<void> => {
     try {
@@ -93,22 +100,21 @@ export const updateBranch = async (
         );
 
         if (!updatedBranch) {
-            res.status(404).json({ message: "Branch not found or update failed" });
-            return;
+            return next(new NotFoundError("Branch not found or update failed."));
         }
 
-        res.status(200).json({ message: "Branch updated", data: updatedBranch });
+        res.status(HTTP_STATUS.OK).json(
+            successResponse(updatedBranch, "Branch Updated")
+        );
     } catch (error) {
         next(error);
     }
 };
 
 /**
- * Deletes a branch by ID.
+ * @description Delete a branch.
  * @route DELETE /branches/:id
- * @param req - Express request object, expects branch ID in req.params.id.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @returns {Promise<void>}
  */
 export const deleteBranch = async (
     req: Request, 
@@ -116,19 +122,21 @@ export const deleteBranch = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        await branchService.deleteBranch(req.params.id);
-        res.status(200).json({ message: "Branch deleted" });
-    } catch (error) { 
+        const { id } = req.params;
+        await branchService.deleteBranch(id);
+        res.status(200).json({
+            message: "Branch Deleted",
+            status: "success",
+        });
+    } catch (error) {
         next(error);
     }
 };
 
 /**
- * Retrieves employees assigned to a specific branch.
+ * @description Get employees by branch ID.
  * @route GET /branches/:branchId/employees
- * @param req - Express request object, expects branch ID in req.params.branchId.
- * @param res - Express response object.
- * @param next - Express next middleware function.
+ * @returns {Promise<void>}
  */
 export const getEmployeesByBranch = async (
     req: Request, 
@@ -137,14 +145,15 @@ export const getEmployeesByBranch = async (
 ): Promise<void> => {
     try {
         const branchId = req.params.branchId;
-        const employees = await branchService.getEmployeesByBranch(branchId);
         
+        // Ensure that the service is returning an array
+        const employees: Employee[] = await branchService.getEmployeesByBranch(branchId);
+
         if (!employees || employees.length === 0) {
-            res.status(404).json({ message: "No employees found for this branch" });
-            return;
+            return next(new NotFoundError("No employees found for this branch."));
         }
 
-        res.status(200).json({ message: "Employees retrieved", data: employees });
+        res.status(HTTP_STATUS.OK).json(successResponse(employees, "Employees Retrieved"));
     } catch (error) {
         next(error);
     }
